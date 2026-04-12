@@ -620,7 +620,7 @@
 <header>
   <div class="logo"><img src="images/vl-thumbnail.png" alt="VL"></div>
   <h1>Cashout Calculator</h1>
-  <button class="backups-toggle" id="backupsToggle" onclick="toggleBackupsScreen()">Backups</button>
+  <button class="backups-toggle" id="backupsToggle" onclick="toggleBackupsScreen()">Cashout Log</button>
   <span class="version">v3</span>
 </header>
 
@@ -1850,7 +1850,7 @@ function toggleBackupsScreen() {
     document.querySelectorAll('.container > *:not(#backupsScreen):not([id="backupsScreen"])').forEach(el => {
       if (el.id !== 'backupsScreen') el.style.display = '';
     });
-    document.getElementById('backupsToggle').textContent = 'Backups';
+    document.getElementById('backupsToggle').textContent = 'Cashout Log';
   } else {
     // Show backups, hide main form elements
     document.querySelectorAll('.container > *').forEach(el => {
