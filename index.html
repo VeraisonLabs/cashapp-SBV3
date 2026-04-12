@@ -1,0 +1,2037 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Cashout Calculator</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@600;700;800&family=Roboto:wght@700;900&display=swap');
+
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #21262d;
+    --border: #30363d;
+    --accent: #f0a500;
+    --accent2: #e05c2a;
+    --green: #3fb950;
+    --red: #f85149;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --radius: 10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    padding: 0 0 80px 0;
+  }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .logo {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: 1.5px solid var(--accent);
+    overflow: hidden;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  header h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  header .version {
+    margin-left: auto;
+    font-size: 10px;
+    color: var(--muted);
+  }
+
+  .container { max-width: 480px; margin: 0 auto; padding: 20px 16px; }
+
+  .section-label {
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 24px 0 10px;
+  }
+  .section-label:first-child { margin-top: 0; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+
+  .field {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .field:last-child { border-bottom: none; }
+
+  .field label {
+    display: block;
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 6px;
+    letter-spacing: 0.05em;
+  }
+
+  .field input[type="text"],
+  .field input[type="number"],
+  .field input[type="date"],
+  .field select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 16px;
+    padding: 12px 12px;
+    min-height: 48px;
+    outline: none;
+    transition: border-color 0.15s;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .field input[type="date"]::-webkit-calendar-picker-indicator {
+    /* Approximates var(--accent) #f0a500 */
+    filter: brightness(0) saturate(100%) invert(65%) sepia(88%) saturate(460%) hue-rotate(5deg) brightness(88%);
+    cursor: pointer;
+    width: 22px;
+    height: 22px;
+  }
+
+  .field select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238b949e' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+    cursor: pointer;
+  }
+
+  .field input:focus,
+  .field select:focus { border-color: var(--accent); }
+
+  .field input.error { border-color: var(--red); }
+  .field select.error { border-color: var(--red); }
+
+  /* Dollar prefix wrapper */
+  .dollar-wrap { position: relative; }
+  .dollar-wrap::before {
+    content: '$';
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 16px;
+    pointer-events: none;
+  }
+  .field .dollar-wrap input { padding-left: 2rem; text-align: left; }
+
+  /* Sign toggle button */
+  .sign-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    background: var(--red);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-family: 'DM Mono', monospace;
+    font-size: 20px;
+    font-weight: 700;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+  .sign-btn.positive { background: var(--green); }
+
+  /* Calculate button */
+  .calc-btn {
+    width: 100%;
+    padding: 16px;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: var(--radius);
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    margin: 8px 0;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+  .calc-btn:active { transform: scale(0.98); opacity: 0.9; }
+  .calc-btn.dim { opacity: 0.3; cursor: default; pointer-events: none; }
+
+  /* Results */
+  #results { display: none; margin-top: 8px; }
+
+  .result-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+
+  .result-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+  }
+  .result-row:last-child { border-bottom: none; }
+  .result-row .label { color: var(--muted); }
+  .result-row .value { font-weight: 500; }
+  .result-row.total {
+    background: var(--surface2);
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+  }
+
+  .positive { color: var(--green); }
+  .negative { color: var(--red); }
+  .accent   { color: var(--accent); }
+
+  /* Editable tip-out inputs */
+  .tipout-input {
+    background: transparent;
+    border: none;
+    border-bottom: 1px dashed transparent;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    font-weight: 500;
+    text-align: right;
+    width: 84px;
+    padding: 2px 0;
+    outline: none;
+    -webkit-appearance: none;
+    -moz-appearance: textfield;
+  }
+  .tipout-input::-webkit-inner-spin-button,
+  .tipout-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+  .tipout-input:focus { border-bottom: 1px dashed var(--accent); }
+  .tipout-input.accent { color: var(--accent); }
+
+  /* Cashout banners */
+  .cashout-banner {
+    border-radius: var(--radius);
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 12px;
+    border: 2px solid;
+  }
+  .cashout-banner.owe      { background: rgba(248,81,73,0.1);   border-color: var(--red); }
+  .cashout-banner.dueback  { background: rgba(63,185,80,0.1);   border-color: var(--green); }
+  .cashout-banner.tips     { background: rgba(240,165,0,0.08);  border-color: var(--accent); }
+  .cashout-banner .banner-label {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    color: var(--muted);
+    font-family: 'Syne', sans-serif;
+  }
+  .cashout-banner .banner-amount {
+    font-family: 'DM Mono', monospace;
+    font-size: 36px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+  .cashout-banner.owe     .banner-amount { color: var(--red); }
+  .cashout-banner.dueback .banner-amount { color: var(--green); }
+  .cashout-banner.tips    .banner-amount { color: var(--accent); }
+  .cashout-banner .banner-sub {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+
+  /* Per-person cards */
+  .person-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+  .person-card-header {
+    padding: 10px 16px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    justify-content: space-between;
+  }
+  .person-card-header .share-pct { color: var(--muted); font-size: 12px; }
+
+  /* Team label in sushi results */
+  .team-label {
+    font-family: 'Syne', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 12px 0 6px;
+  }
+
+  /* Submit button */
+  .submit-btn {
+    width: 100%;
+    padding: 16px;
+    background: var(--red);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-top: 4px;
+    line-height: 1.4;
+    white-space: normal;
+  }
+  .submit-btn:hover  { opacity: 0.88; }
+  .submit-btn:active { transform: scale(0.98); }
+  .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .submit-btn .btn-sub {
+    display: block;
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    opacity: 0.85;
+    margin-top: 2px;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 20px;
+    font-size: 13px;
+    z-index: 100;
+    transition: transform 0.3s ease;
+    white-space: nowrap;
+    max-width: 90vw;
+  }
+  .toast.show    { transform: translateX(-50%) translateY(0); }
+  .toast.success { border-color: var(--green); color: var(--green); }
+  .toast.error   { border-color: var(--red);   color: var(--red); }
+
+  /* Customization rows */
+  .custom-check-row {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+  }
+  .custom-check-row:last-child { border-bottom: none; }
+
+  .custom-check-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text);
+    user-select: none;
+    min-height: 44px;
+    padding: 4px 0;
+  }
+  .custom-check-label input[type="checkbox"] {
+    width: 22px;
+    height: 22px;
+    accent-color: var(--accent);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .custom-expand {
+    display: none;
+    margin-top: 10px;
+    padding: 12px;
+    background: rgba(240,165,0,0.05);
+    border-left: 2px solid var(--accent);
+    border-radius: 6px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .custom-hours-grid {
+    display: grid;
+    grid-template-columns: 1fr 90px 44px;
+    gap: 8px;
+    margin-bottom: 6px;
+    align-items: center;
+  }
+
+  .del-row-btn {
+    width: 44px;
+    height: 44px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--muted);
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    padding: 0;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .del-row-btn:hover { border-color: var(--red); color: var(--red); }
+  .custom-hours-grid input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 15px;
+    padding: 12px 10px;
+    outline: none;
+    width: 100%;
+    min-height: 44px;
+  }
+  .custom-hours-grid input:focus { border-color: var(--accent); }
+  /* Hours number inputs — accent tint so they're visually distinct from name inputs */
+  .custom-hours-grid input.hrs-input {
+    border-color: var(--accent);
+    background: rgba(240,165,0,0.06);
+    color: var(--accent);
+  }
+  .custom-hours-grid input.hrs-input::placeholder { color: rgba(240,165,0,0.4); }
+
+  .add-member-btn {
+    width: 100%;
+    padding: 12px 8px;
+    min-height: 44px;
+    background: transparent;
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+    color: var(--accent);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-top: 6px;
+  }
+  .add-member-btn:hover { border-color: var(--accent); background: rgba(240,165,0,0.05); }
+
+  .bar-type-toggle { display: flex; gap: 6px; margin-bottom: 8px; }
+  .bar-type-toggle .toggle-btn { font-size: 12px; min-height: 44px; }
+
+  .toggle-btn {
+    flex: 1;
+    padding: 12px 10px;
+    min-height: 44px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+  .toggle-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #000;
+    font-weight: 500;
+  }
+
+  /* Backups screen */
+  .backups-toggle {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    padding: 6px 10px;
+    cursor: pointer;
+    margin-left: auto;
+    transition: all 0.15s;
+  }
+  .backups-toggle:hover { border-color: var(--accent); color: var(--accent); }
+  .backups-toggle.has-pending { border-color: var(--red); color: var(--red); }
+
+  #backupsScreen { display: none; }
+
+  .backups-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    table-layout: auto;
+  }
+  .backups-table th {
+    text-align: left;
+    font-family: 'Syne', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    padding: 8px 6px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .backups-table td {
+    padding: 8px 6px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+    color: var(--text);
+  }
+  .backups-table tr:last-child td { border-bottom: none; }
+  .backups-table tr { cursor: pointer; transition: background 0.1s; }
+  .backups-table tbody tr:hover { background: var(--surface2); }
+
+  .status-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 500;
+    padding: 2px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  .status-badge.synced    { background: rgba(63,185,80,0.15);  color: var(--green); }
+  .status-badge.pending   { background: rgba(240,165,0,0.15);  color: var(--accent); }
+  .status-badge.error     { background: rgba(248,81,73,0.15);  color: var(--red); }
+  .status-badge.conflict  { background: rgba(248,81,73,0.15);  color: var(--red); }
+  .status-badge.partial   { background: rgba(240,165,0,0.15);  color: var(--accent); }
+  .status-badge.manual    { background: rgba(139,148,158,0.15); color: var(--muted); }
+
+  .msg-cell { font-size: 10px; color: var(--muted); max-width: 140px; }
+
+  .backup-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 12px;
+    padding: 12px 0;
+  }
+  .backup-action-btn {
+    flex: 1;
+    padding: 12px 8px;
+    min-height: 44px;
+    border-radius: 6px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    transition: all 0.15s;
+  }
+  .backup-action-btn.resubmit {
+    background: var(--accent);
+    color: #000;
+    border-color: var(--accent);
+    font-weight: 500;
+  }
+  .backup-action-btn.mark-synced {
+    background: var(--surface2);
+    color: var(--muted);
+  }
+  .backup-action-btn:hover { opacity: 0.88; }
+
+  /* Reset button */
+  .reset-btn {
+    width: 100%;
+    padding: 16px;
+    background: var(--surface2);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 8px;
+    opacity: 0.35;
+  }
+  .reset-btn.active {
+    background: var(--red);
+    color: #fff;
+    border-color: var(--red);
+    opacity: 1;
+  }
+  .reset-btn:active { transform: scale(0.98); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><img src="images/vl-thumbnail.png" alt="VL"></div>
+  <h1>Cashout Calculator</h1>
+  <button class="backups-toggle" id="backupsToggle" onclick="toggleBackupsScreen()">Backups</button>
+  <span class="version">v3</span>
+</header>
+
+<div class="container">
+
+  <!-- CASHOUT INFO -->
+  <div class="section-label">Cashout Info</div>
+  <div class="card">
+    <div class="field">
+      <label>CASHOUT DATE</label>
+      <input type="date" id="cashoutDate">
+    </div>
+    <div class="field">
+      <label>REFERENCE #</label>
+      <input type="number" id="refNum" inputmode="numeric" placeholder="00">
+    </div>
+    <div class="field">
+      <label>CASHOUT TYPE</label>
+      <select id="section">
+        <option value="">— select —</option>
+        <optgroup label="AM">
+          <option value="AM Server Main">AM · Server Main</option>
+          <option value="AM Server Upstairs">AM · Server Upstairs</option>
+          <option value="AM Bar Main">AM · Bar Main</option>
+          <option value="AM Bar Upstairs">AM · Bar Upstairs</option>
+        </optgroup>
+        <optgroup label="PM">
+          <option value="PM Server Main">PM · Server Main</option>
+          <option value="PM Server Upstairs">PM · Server Upstairs</option>
+          <option value="PM Bar Main">PM · Bar Main</option>
+          <option value="PM Bar Upstairs">PM · Bar Upstairs</option>
+          <option value="PM Sushi">PM · Sushi</option>
+        </optgroup>
+      </select>
+    </div>
+    <div class="field" id="namesField">
+      <label id="namesLabel">NAME(S) <span style="color:var(--muted);font-size:10px;font-weight:400">— multiple = equal split unless customized below</span></label>
+      <input type="text" id="names" placeholder="single name or comma-separated for split" autocomplete="off">
+    </div>
+    <div class="field" id="sushiNamesField" style="display:none;">
+      <label>SUSHI TEAM - NAME(S)</label>
+      <input type="text" id="sushiNames" placeholder="single name or comma-separated for split" autocomplete="off">
+    </div>
+  </div>
+
+  <!-- CUSTOMIZATIONS -->
+  <div class="section-label">Customizations</div>
+  <div class="card">
+
+    <!-- SERVER: Server Split -->
+    <div class="custom-check-row" id="customRowServerSplit" style="display:none;">
+      <label class="custom-check-label">
+        <input type="checkbox" id="serverSplitCb" onchange="toggleServerSplit()">
+        Server Split
+      </label>
+      <div id="serverSplitSection" class="custom-expand">
+        <div class="bar-type-toggle">
+          <button class="toggle-btn active" id="serverSplitEqualBtn" onclick="selectServerSplitType('equal')">Equal</button>
+          <button class="toggle-btn" id="serverSplitHoursBtn" onclick="selectServerSplitType('hours')">By Hours</button>
+        </div>
+        <div id="serverSplitEqualNote" style="font-size:12px;color:var(--muted);">Names entered above will be split equally.</div>
+        <div id="serverSplitHoursWrapper" style="display:none;margin-top:8px;">
+          <div id="serverSplitHoursInputs"></div>
+          <button type="button" class="add-member-btn" onclick="addServerSplitHoursEntry()">+ Add Team Member</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SERVER: Split including Bar -->
+    <div class="custom-check-row" id="customRowSplitIncBar" style="display:none;">
+      <label class="custom-check-label">
+        <input type="checkbox" id="splitIncBarCb" onchange="toggleSplitIncBar()">
+        Split including Bar
+      </label>
+      <div id="splitIncBarSection" class="custom-expand">
+        <div class="bar-type-toggle">
+          <button class="toggle-btn active" id="splitIncBarEqualBtn" onclick="selectSplitIncBarType('equal')">Equal</button>
+          <button class="toggle-btn" id="splitIncBarHoursBtn" onclick="selectSplitIncBarType('hours')">By Hours</button>
+        </div>
+        <div id="splitIncBarEqualNote" style="font-size:12px;color:var(--muted);">Names entered above will be split equally. Bar tip-out excluded.</div>
+        <div id="splitIncBarHoursWrapper" style="display:none;margin-top:8px;">
+          <div id="splitIncBarHoursInputs"></div>
+          <button type="button" class="add-member-btn" onclick="addSplitIncBarHoursEntry()">+ Add Team Member</button>
+          <p style="margin-top:6px;font-size:12px;color:var(--muted);">Split proportionally by hours. Bar tip-out excluded.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- BAR: Split Type (auto-expanded, no checkbox) -->
+    <div class="custom-check-row" id="customRowBarSplit" style="display:none;flex-direction:column;">
+      <span style="font-size:13px;color:var(--text);margin-bottom:10px;">Split Type</span>
+      <div class="custom-expand" style="display:block;">
+        <div class="bar-type-toggle">
+          <button class="toggle-btn active" id="barSplitEqualBtn" onclick="selectBarSplitType('equal')">Equal</button>
+          <button class="toggle-btn" id="barSplitHoursBtn" onclick="selectBarSplitType('hours')">By Hours</button>
+        </div>
+        <div id="barSplitEqualNote" style="font-size:12px;color:var(--muted);">Names entered above will be split equally.</div>
+        <div id="barSplitHoursWrapper" style="display:none;margin-top:8px;">
+          <div id="barSplitHoursInputs"></div>
+          <button type="button" class="add-member-btn" onclick="addBarSplitHoursEntry()">+ Add Team Member</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sushi: Split Bar Team by Hours -->
+    <div class="custom-check-row" id="customRowSushiHours" style="display:none;">
+      <label class="custom-check-label">
+        <input type="checkbox" id="sushiBarHoursCb" onchange="toggleSushiBarHours()">
+        Split Bar Team by Hours
+      </label>
+      <div id="sushiBarHoursSection" class="custom-expand">
+        <p style="margin-bottom:8px;">Enter hours worked for each bar team member to split proportionally.</p>
+        <div id="sushiBarHoursInputs"></div>
+        <button type="button" class="add-member-btn" onclick="addSushiBarHoursEntry()">+ Add Bar Team Member</button>
+      </div>
+    </div>
+
+    <!-- Sushi: Split Sushi Team by Hours -->
+    <div class="custom-check-row" id="customRowSushiTeamHours" style="display:none;">
+      <label class="custom-check-label">
+        <input type="checkbox" id="sushiTeamHoursCb" onchange="toggleSushiTeamHours()">
+        Split Sushi Team by Hours
+      </label>
+      <div id="sushiTeamHoursSection" class="custom-expand">
+        <p style="margin-bottom:8px;">Enter hours worked for each sushi team member to split proportionally.</p>
+        <div id="sushiTeamHoursInputs"></div>
+        <button type="button" class="add-member-btn" onclick="addSushiTeamHoursEntry()">+ Add Sushi Team Member</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- SALES FIGURES -->
+  <div class="section-label">Sales Figures <span id="salesFiguresHint" style="color:var(--muted);font-size:10px;font-weight:400;text-transform:none;font-family:'DM Mono',monospace;">— select cashout type</span></div>
+  <div class="card">
+    <div id="salesFiguresFields" style="display:none;">
+      <div class="field" id="totalSalesField">
+        <label>TOTAL SALES (NET TOTAL)</label>
+        <div class="dollar-wrap">
+          <input type="number" id="totalSales" inputmode="decimal" step="0.01" placeholder="0.00">
+        </div>
+      </div>
+      <div class="field" id="netCashField">
+        <label id="netCashLabel">TOTAL CASH DUE (NET CASH)</label>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button type="button" class="sign-btn" id="netCashSignBtn" onclick="toggleNetCashSign()">−</button>
+          <div class="dollar-wrap" style="flex:1;">
+            <input type="number" id="netCash" inputmode="decimal" step="0.01" placeholder="0.00">
+          </div>
+        </div>
+      </div>
+      <div class="field" id="sFoodTipPoolField" style="display:none;">
+        <label>FOOD SALES #1 (S-FOOD)</label>
+        <div class="dollar-wrap">
+          <input type="number" id="sFoodTipPool" inputmode="decimal" step="0.01" placeholder="0.00">
+        </div>
+      </div>
+      <div class="field" id="foodSalesField">
+        <label id="foodSalesLabel">FOOD SALES #2 (DOLLARS COLUMN)</label>
+        <div class="dollar-wrap">
+          <input type="number" id="foodSales" inputmode="decimal" step="0.01" placeholder="0.00">
+        </div>
+      </div>
+      <div class="field" id="beoSalesField">
+        <label>EVENTS / BEO SUBTOTAL <span style="color:var(--muted);font-size:11px">(IF APPLICABLE)</span></label>
+        <div class="dollar-wrap">
+          <input type="number" id="beoSales" inputmode="decimal" step="0.01" placeholder="0.00">
+        </div>
+      </div>
+    </div><!-- /salesFiguresFields -->
+  </div>
+
+  <button class="calc-btn dim" id="calcBtn" onclick="calculate()">Calculate Cashout</button>
+
+  <!-- RESULTS -->
+  <div id="results">
+
+    <div class="section-label" id="tipOutLabel">Tip-Out Breakdown</div>
+    <div class="result-card" id="tipOutCard">
+      <div class="result-row">
+        <span class="label">House (3.5%)</span>
+        <input type="number" class="tipout-input accent" id="r_house" step="0.01" min="0" placeholder="0.00">
+      </div>
+      <div class="result-row">
+        <span class="label">Busser (1%)</span>
+        <input type="number" class="tipout-input" id="r_busser" step="0.01" min="0" placeholder="0.00">
+      </div>
+      <div class="result-row">
+        <span class="label">Bar (1%)</span>
+        <input type="number" class="tipout-input" id="r_bar" step="0.01" min="0" placeholder="0.00">
+      </div>
+      <div class="result-row">
+        <span class="label">Expo (1.5% food)</span>
+        <input type="number" class="tipout-input" id="r_expo" step="0.01" min="0" placeholder="0.00">
+      </div>
+      <div class="result-row" id="r_eventsRow" style="display:none">
+        <span class="label">Events (1% BEO)</span>
+        <input type="number" class="tipout-input" id="r_events" step="0.01" min="0" placeholder="0.00">
+      </div>
+      <div class="result-row total">
+        <span class="label" style="color:var(--text)">Total Tip-Out</span>
+        <span class="value accent" id="r_totalTipOut">—</span>
+      </div>
+    </div>
+
+    <!-- Sushi: Tip Distribution card -->
+    <div id="sushiDistCard" style="display:none;">
+      <div class="result-card">
+        <div class="result-row">
+          <span class="label">Total Cash Due (Net Cash)</span>
+          <span class="value accent" id="r_totalTips">—</span>
+        </div>
+        <div class="result-row">
+          <span class="label">Bar Team (50%)</span>
+          <span class="value" id="r_barTotal">—</span>
+        </div>
+        <div class="result-row">
+          <span class="label">Sushi Team (50%)</span>
+          <span class="value" id="r_sushiTotal">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Single-person banner -->
+    <div id="singleResult">
+      <div class="cashout-banner" id="cashoutBanner">
+        <div class="banner-amount" id="bannerAmount">—</div>
+        <div class="banner-sub" id="bannerSub">—</div>
+      </div>
+    </div>
+
+    <!-- Split / sushi per-person results -->
+    <div id="splitResults"></div>
+
+    <button class="submit-btn" id="submitBtn" onclick="submitCashout(isResubmitMode)">
+      Submit Cashout
+    </button>
+    <button class="reset-btn" id="resetBtn" onclick="resetForm()">Start New Cashout</button>
+  </div>
+
+  <!-- BACKUPS SCREEN -->
+  <div id="backupsScreen">
+    <div class="section-label">Cashout Backup Log</div>
+    <div class="card" style="overflow-x:auto;">
+      <table class="backups-table">
+        <thead>
+          <tr>
+            <th>Cashout ID</th>
+            <th>Status</th>
+            <th>Message</th>
+            <th>Names</th>
+            <th>Type</th>
+            <th>Shared</th>
+            <th>Amount</th>
+          </tr>
+        </thead>
+        <tbody id="backupsTableBody"></tbody>
+      </table>
+      <div id="backupsEmpty" style="padding:24px;text-align:center;color:var(--muted);font-size:13px;display:none;">
+        No cashouts stored on this iPad yet.
+      </div>
+    </div>
+
+    <!-- Detail / action area (shown when a row is tapped) -->
+    <div id="backupDetail" style="display:none;">
+      <div class="section-label" id="backupDetailLabel">—</div>
+      <div class="backup-actions">
+        <button class="backup-action-btn resubmit" id="backupResubmitBtn" onclick="resubmitFromBackup()">Load into Form</button>
+        <button class="backup-action-btn mark-synced" id="backupMarkSyncedBtn" onclick="markAsSynced()">Mark as Synced</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer branding -->
+  <div style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:32px 0 8px;border-top:1px solid var(--border);margin-top:24px;opacity:0.5;">
+    <div style="font-family:'Roboto',sans-serif;font-weight:900;text-align:center;line-height:1.2;transform:scaleX(1.2);transform-origin:center;">
+      <div style="font-size:18px;letter-spacing:0.1em;color:#fff;">VER<span style="background:linear-gradient(180deg,#f5c842,#c97800);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">AI</span>SON</div>
+      <div style="font-size:11px;letter-spacing:0.35em;color:#fff;margin-top:2px;">LABS</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+const SCRIPT_URL        = 'https://script.google.com/macros/s/AKfycbxb3SPKNXDvhc6UiAl2DDmRq0qM6zv-y2o60ckH15QXThCVB7fpyGU8oCNfzBgtrcX_/exec';
+const BACKUP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxoV4V88bHDrnzQbq8QV83ukzVeZfPXmcxLjUMXW2380X-YA_9YxPgH3nr41Dp5VEbU/exec';
+const BACKUP_STORAGE_KEY = 'sb_cashout_backups';
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let netCashNegative  = true;   // true = "−" (dueback mode), false = "+" (owes house)
+let serverSplitType  = 'equal';
+let splitIncBarType  = 'equal';
+let barSplitType     = 'equal';
+let calcData         = null;
+let syncingNames     = false;
+let isResubmitMode   = false;  // set to true when loading from backup
+
+// ── ERROR CODE → DISPLAY MESSAGE DICTIONARY ──────────────────────────────────
+// Apps Script throws short stable codes. The iPad translates them here.
+// Problem-first, reassurance-last. Staff reads the problem, tells the manager.
+const ERROR_MESSAGES = {
+  TEMPLATE_MISSING:    { problem: 'Template tab not found on cashout master sheet' },
+  REF_CONFLICT:        { problem: 'REF# {param} already exists on today\'s sheet' },
+  SECTION_FULL:        { problem: '{param} section is full, no empty rows' },
+  RESUBMIT_NOT_FOUND:  { problem: 'REF# {param} not found, use fresh Submit instead' },
+  UNKNOWN_SECTION:     { problem: 'Unknown section "{param}", contact Matt' },
+};
+
+function parseErrorCode(errorString) {
+  // errorString looks like "Error: REF_CONFLICT: 42" or "Error: TEMPLATE_MISSING"
+  const cleaned = errorString.replace(/^Error:\s*/, '');
+  const colonIdx = cleaned.indexOf(':');
+  const code  = colonIdx === -1 ? cleaned.trim() : cleaned.substring(0, colonIdx).trim();
+  const param = colonIdx === -1 ? '' : cleaned.substring(colonIdx + 1).trim();
+  const entry = ERROR_MESSAGES[code];
+  if (entry) {
+    return { code, param, problem: entry.problem.replace('{param}', param) };
+  }
+  return { code: 'UNKNOWN', param: '', problem: cleaned };
+}
+
+// ── LOCAL BACKUP (localStorage) ──────────────────────────────────────────────
+function getBackups() {
+  try {
+    return JSON.parse(localStorage.getItem(BACKUP_STORAGE_KEY)) || [];
+  } catch (e) { return []; }
+}
+
+function saveBackups(backups) {
+  localStorage.setItem(BACKUP_STORAGE_KEY, JSON.stringify(backups));
+}
+
+function addBackupEntry(formInputs, calcResult, rows, isResubmit) {
+  const backups = getBackups();
+  const cashoutDate = formInputs.cashoutDate || '';
+  const refNum = formInputs.refNum || '';
+  const cashoutId = cashoutDate + '[REF' + refNum + ']';
+  const entry = {
+    cashoutId,
+    timestamp: new Date().toLocaleString('en-CA', { timeZone: 'America/Vancouver' }),
+    formInputs,
+    calcResult,
+    rows,
+    isResubmit,
+    mainStatus:   'pending',
+    mainMessage:  '',
+    backupStatus: 'pending',
+    backupMessage: '',
+  };
+  backups.unshift(entry);  // newest first
+  // Keep last 200 entries to avoid filling localStorage
+  if (backups.length > 200) backups.length = 200;
+  saveBackups(backups);
+  return backups.length - 1;  // not used currently, but available
+}
+
+function updateBackupStatus(cashoutId, field, status, message) {
+  const backups = getBackups();
+  const entry = backups.find(b => b.cashoutId === cashoutId && b[field] === 'pending');
+  if (entry) {
+    entry[field] = status;
+    if (message) entry[field.replace('Status', 'Message')] = message;
+    saveBackups(backups);
+  }
+}
+
+function getDisplayStatus(entry) {
+  // Derive a single display status from the two POST results
+  if (entry.mainStatus === 'manual') return { status: 'Synced', message: 'Manually synced' };
+  if (entry.mainStatus === 'success' && entry.backupStatus === 'success') return { status: 'Synced', message: '' };
+  if (entry.mainStatus === 'success' && entry.backupStatus !== 'success') return { status: 'Synced', message: 'Backup sync failed (not urgent)' };
+  if (entry.mainStatus !== 'success' && entry.backupStatus === 'success') return { status: 'Partial', message: 'Main sheet sync failed, backup sheet OK' };
+  if (entry.mainStatus === 'error' && entry.mainMessage) {
+    const parsed = parseErrorCode(entry.mainMessage);
+    if (parsed.code === 'REF_CONFLICT') return { status: 'Conflict', message: parsed.problem };
+    return { status: 'Error', message: parsed.problem };
+  }
+  if (entry.mainStatus === 'pending' && entry.backupStatus === 'pending') {
+    if (entry.mainMessage) return { status: 'Pending', message: entry.mainMessage };
+    return { status: 'Pending', message: 'Network error, not submitted' };
+  }
+  return { status: 'Pending', message: entry.mainMessage || 'Both syncs failed' };
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+const fmt = n => '$' + Math.abs(n).toFixed(2);
+
+function roundHalfUp(n) {
+  return Math.round((n + 1e-10) * 100) / 100;
+}
+
+function getNames() {
+  return document.getElementById('names').value
+    .split(',').map(n => n.trim()).filter(n => n.length > 0);
+}
+
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + type;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── SECTION CHANGE ────────────────────────────────────────────────────────────
+document.getElementById('section').addEventListener('change', function () {
+  const val     = this.value;
+  const isBar   = val.includes('Bar');
+  const isSushi = val.includes('Sushi');
+
+  // Dynamic names label
+  document.getElementById('namesLabel').innerHTML = isSushi
+    ? 'BAR TEAM - NAME(S)'
+    : 'NAME(S) <span style="color:var(--muted);font-size:10px;font-weight:400">— multiple = equal split unless customized below</span>';
+
+  // Sushi second names field
+  document.getElementById('sushiNamesField').style.display = isSushi ? 'block' : 'none';
+  if (!isSushi) document.getElementById('sushiNames').value = '';
+
+  // Customization rows
+  const isServer = !isBar && !isSushi;
+  document.getElementById('customRowServerSplit').style.display     = isServer ? 'flex' : 'none';
+  document.getElementById('customRowSplitIncBar').style.display     = isServer ? 'flex' : 'none';
+  document.getElementById('customRowBarSplit').style.display        = isBar    ? 'flex' : 'none';
+  document.getElementById('customRowSushiHours').style.display      = isSushi  ? 'flex' : 'none';
+  document.getElementById('customRowSushiTeamHours').style.display  = isSushi  ? 'flex' : 'none';
+
+  // Sales Figures
+  document.getElementById('salesFiguresHint').style.display   = 'none';
+  document.getElementById('salesFiguresFields').style.display = 'block';
+  document.getElementById('calcBtn').classList.remove('dim');
+  document.getElementById('totalSalesField').style.display   = isSushi ? 'none' : 'block';
+  document.getElementById('foodSalesField').style.display    = isSushi ? 'none' : 'block';
+  document.getElementById('beoSalesField').style.display     = isSushi ? 'none' : 'block';
+  document.getElementById('sFoodTipPoolField').style.display = isBar   ? 'block' : 'none';
+  if (!isBar) document.getElementById('sFoodTipPool').value  = '';
+  document.getElementById('foodSalesLabel').textContent = isBar
+    ? 'FOOD SALES #2 (DOLLARS COLUMN)'
+    : 'FOOD SALES (DOLLARS COLUMN)';
+
+  // Net Cash label & sign button
+  const signBtn = document.getElementById('netCashSignBtn');
+  signBtn.style.display = 'inline-flex';
+  netCashNegative = true;
+  signBtn.textContent = '−';
+  signBtn.classList.remove('positive');
+  document.getElementById('netCashLabel').textContent = 'TOTAL CASH DUE (NET CASH) ';
+});
+
+// ── NET CASH SIGN TOGGLE ──────────────────────────────────────────────────────
+function toggleNetCashSign() {
+  netCashNegative = !netCashNegative;
+  const btn = document.getElementById('netCashSignBtn');
+  btn.textContent = netCashNegative ? '−' : '+';
+  netCashNegative ? btn.classList.remove('positive') : btn.classList.add('positive');
+}
+
+// ── NAMES → HOURS INPUTS SYNC ─────────────────────────────────────────────────
+function syncHoursFromNames(containerEl, nameClass, valClass) {
+  const names = getNames();
+  const hoursMap = {};
+  containerEl.querySelectorAll('.custom-hours-grid').forEach(row => {
+    const n = row.querySelector('.' + nameClass);
+    const h = row.querySelector('.' + valClass);
+    if (n && h) hoursMap[n.value.trim()] = h.value;
+  });
+  containerEl.innerHTML = '';
+  (names.length ? names : ['']).forEach(n => {
+    const row = createCustomHoursRow(n, nameClass, valClass);
+    const hInput = row.querySelector('.' + valClass);
+    if (hoursMap[n]) hInput.value = hoursMap[n];
+    containerEl.appendChild(row);
+  });
+}
+
+document.getElementById('names').addEventListener('input', function () {
+  if (syncingNames) return;
+  syncingNames = true;
+  const serverHoursActive = document.getElementById('serverSplitCb')?.checked && serverSplitType === 'hours';
+  const incBarHoursActive = document.getElementById('splitIncBarCb')?.checked && splitIncBarType === 'hours';
+  const barHoursActive    = document.getElementById('customRowBarSplit')?.style.display !== 'none' && barSplitType === 'hours';
+  const sushiBarActive    = document.getElementById('sushiBarHoursCb')?.checked;
+  if (serverHoursActive) syncHoursFromNames(document.getElementById('serverSplitHoursInputs'), 'server-split-hrs-name', 'server-split-hrs-val');
+  if (incBarHoursActive) syncHoursFromNames(document.getElementById('splitIncBarHoursInputs'), 'split-incbar-hrs-name', 'split-incbar-hrs-val');
+  if (barHoursActive)    syncHoursFromNames(document.getElementById('barSplitHoursInputs'),    'bar-split-hrs-name',    'bar-split-hrs-val');
+  if (sushiBarActive)    syncHoursFromNames(document.getElementById('sushiBarHoursInputs'),    'sushi-bar-hrs-name',    'sushi-bar-hrs-val');
+  syncingNames = false;
+});
+
+
+// sushiNames (sushi team) ↔ sushi team hours grid
+document.getElementById('sushiNames').addEventListener('input', function () {
+  if (syncingNames || !document.getElementById('sushiTeamHoursCb').checked) return;
+  syncingNames = true;
+  const raw   = document.getElementById('sushiNames').value;
+  const names = raw.split(',').map(n => n.trim()).filter(n => n.length > 0);
+  const container = document.getElementById('sushiTeamHoursInputs');
+  const hoursMap = {};
+  container.querySelectorAll('.custom-hours-grid').forEach(row => {
+    const n = row.querySelector('.sushi-team-hrs-name');
+    const h = row.querySelector('.sushi-team-hrs-val');
+    if (n && h) hoursMap[n.value.trim()] = h.value;
+  });
+  container.innerHTML = '';
+  (names.length ? names : ['']).forEach(n => {
+    const row = createCustomHoursRow(n, 'sushi-team-hrs-name', 'sushi-team-hrs-val');
+    const hInput = row.querySelector('.sushi-team-hrs-val');
+    if (hoursMap[n]) hInput.value = hoursMap[n];
+    container.appendChild(row);
+  });
+  syncingNames = false;
+});
+
+document.getElementById('sushiTeamHoursInputs').addEventListener('input', function (e) {
+  if (syncingNames || !e.target.classList.contains('sushi-team-hrs-name')) return;
+  syncingNames = true;
+  const names = Array.from(document.querySelectorAll('.sushi-team-hrs-name'))
+    .map(i => i.value.trim()).filter(n => n);
+  document.getElementById('sushiNames').value = names.join(', ');
+  syncingNames = false;
+});
+
+// ── HOURS GRID → NAMES reverse sync (missing 4 grids) ────────────────────────
+[
+  { containerId: 'serverSplitHoursInputs',  nameClass: 'server-split-hrs-name' },
+  { containerId: 'splitIncBarHoursInputs',  nameClass: 'split-incbar-hrs-name' },
+  { containerId: 'barSplitHoursInputs',     nameClass: 'bar-split-hrs-name'    },
+  { containerId: 'sushiBarHoursInputs',     nameClass: 'sushi-bar-hrs-name'    },
+].forEach(function({ containerId, nameClass }) {
+  document.getElementById(containerId).addEventListener('input', function (e) {
+    if (syncingNames || !e.target.classList.contains(nameClass)) return;
+    syncingNames = true;
+    const names = Array.from(document.querySelectorAll('.' + nameClass))
+      .map(i => i.value.trim()).filter(n => n);
+    document.getElementById('names').value = names.join(', ');
+    syncingNames = false;
+  });
+});
+
+// ── CALCULATE ─────────────────────────────────────────────────────────────────
+function calculate() {
+  const cashoutDate = document.getElementById('cashoutDate').value;
+  const refNum      = document.getElementById('refNum').value.trim();
+  const section     = document.getElementById('section').value;
+  const names       = getNames();
+  const isSushiType = section.includes('Sushi');
+  const isBarType   = section.includes('Bar');
+
+  // Clear errors
+  ['cashoutDate','refNum','section','names','totalSales','netCash','foodSales','sushiNames']
+    .forEach(id => document.getElementById(id)?.classList.remove('error'));
+
+  let valid = true;
+  if (!cashoutDate)     { document.getElementById('cashoutDate').classList.add('error'); valid = false; }
+  if (!refNum)          { document.getElementById('refNum').classList.add('error');      valid = false; }
+  if (!section)         { document.getElementById('section').classList.add('error');     valid = false; }
+  if (!names.length)    { document.getElementById('names').classList.add('error');       valid = false; }
+  if (!valid) { showToast('Please fill in all required fields', 'error'); return; }
+
+  // ── SUSHI BRANCH ─────────────────────────────────────────────────────────────
+  if (isSushiType) {
+    const sushiNamesRaw  = document.getElementById('sushiNames').value;
+    const sushiNamesList = sushiNamesRaw.split(',').map(n => n.trim()).filter(n => n.length > 0);
+    const netCashAbs     = parseFloat(document.getElementById('netCash').value) || 0;
+    const netCashSushi   = netCashNegative ? -Math.abs(netCashAbs) : Math.abs(netCashAbs);
+
+    if (!sushiNamesList.length) {
+      document.getElementById('sushiNames').classList.add('error');
+      showToast('Please fill in all required fields', 'error'); return;
+    }
+    if (!netCashAbs) {
+      document.getElementById('netCash').classList.add('error');
+      showToast('Please fill in all required fields', 'error'); return;
+    }
+
+    const totalTips  = roundHalfUp(netCashSushi);
+    const barTotal   = roundHalfUp(totalTips / 2);
+    const sushiTotal = roundHalfUp(totalTips - barTotal);
+
+    // Bar team — equal or by hours
+    let barPersons = [];
+    const useHours = document.getElementById('sushiBarHoursCb').checked;
+    if (useHours) {
+      const hd = getCustomHoursData('sushi-bar-hrs-name', 'sushi-bar-hrs-val');
+      if (!hd) return;
+      const totalHrs = hd.reduce((s, p) => s + p.hours, 0);
+      barPersons = hd.map(p => ({
+        team: 'bar', name: p.name, hours: p.hours,
+        share: p.hours / totalHrs,
+        amount: roundHalfUp(barTotal * (p.hours / totalHrs))
+      }));
+    } else {
+      const share = 1 / names.length;
+      barPersons = names.map(n => ({
+        team: 'bar', name: n, hours: null,
+        share, amount: roundHalfUp(barTotal * share)
+      }));
+    }
+
+    // Sushi team — equal or by hours
+    let sushiPersons = [];
+    const useSushiHours = document.getElementById('sushiTeamHoursCb').checked;
+    if (useSushiHours) {
+      const hd = getCustomHoursData('sushi-team-hrs-name', 'sushi-team-hrs-val');
+      if (!hd) return;
+      const totalHrs = hd.reduce((s, p) => s + p.hours, 0);
+      sushiPersons = hd.map(p => ({
+        team: 'sushi', name: p.name, hours: p.hours,
+        share: p.hours / totalHrs,
+        amount: roundHalfUp(sushiTotal * (p.hours / totalHrs))
+      }));
+    } else {
+      const sushiShare = 1 / sushiNamesList.length;
+      sushiPersons = sushiNamesList.map(n => ({
+        team: 'sushi', name: n, hours: null,
+        share: sushiShare,
+        amount: roundHalfUp(sushiTotal * sushiShare)
+      }));
+    }
+
+    // Display
+    document.getElementById('tipOutLabel').style.display    = 'none';
+    document.getElementById('tipOutCard').style.display     = 'none';
+    document.getElementById('sushiDistCard').style.display  = 'block';
+    document.getElementById('r_totalTips').textContent  = fmt(totalTips);
+    document.getElementById('r_barTotal').textContent   = fmt(barTotal);
+    document.getElementById('r_sushiTotal').textContent = fmt(sushiTotal);
+
+    // Main banner — same dueback/owe display as other types
+    const isDuebackSushi = totalTips < 0;
+    const sushiBanner = document.getElementById('cashoutBanner');
+    sushiBanner.className = 'cashout-banner ' + (isDuebackSushi ? 'dueback' : 'owe');
+    document.getElementById('bannerAmount').textContent = isDuebackSushi
+      ? `Dueback: -$${Math.abs(totalTips).toFixed(2)}`
+      : `Submit: $${totalTips.toFixed(2)}`;
+    document.getElementById('bannerSub').textContent = '';
+    document.getElementById('singleResult').style.display = 'block';
+
+    const splitDiv = document.getElementById('splitResults');
+    splitDiv.innerHTML = '';
+
+    splitDiv.innerHTML += '<div class="team-label">Bar Team</div>';
+    barPersons.forEach(p => {
+      const pct = Math.round(p.share * 100);
+      const hoursNote = p.hours ? ` · ${p.hours}hrs` : '';
+      const isDueback = p.amount < 0;
+      splitDiv.innerHTML += `
+        <div class="person-card">
+          <div class="person-card-header">
+            <span>${p.name}</span>
+            <span class="share-pct">${pct}% share${hoursNote}</span>
+          </div>
+          <div class="cashout-banner ${isDueback ? 'dueback' : 'owe'}" style="border-radius:0;margin:0;border:none;border-top:1px solid var(--border)">
+            <div class="banner-amount">${isDueback ? `Dueback: -$${Math.abs(p.amount).toFixed(2)}` : `Submit: $${p.amount.toFixed(2)}`}</div>
+          </div>
+        </div>`;
+    });
+
+    splitDiv.innerHTML += '<div class="team-label" style="margin-top:16px;">Sushi Team</div>';
+    sushiPersons.forEach(p => {
+      const pct = Math.round(p.share * 100);
+      const hoursNote = p.hours ? ` · ${p.hours}hrs` : '';
+      const isDueback = p.amount < 0;
+      splitDiv.innerHTML += `
+        <div class="person-card">
+          <div class="person-card-header">
+            <span>${p.name}</span>
+            <span class="share-pct">${pct}% share${hoursNote}</span>
+          </div>
+          <div class="cashout-banner ${isDueback ? 'dueback' : 'owe'}" style="border-radius:0;margin:0;border:none;border-top:1px solid var(--border)">
+            <div class="banner-amount">${isDueback ? `Dueback: -$${Math.abs(p.amount).toFixed(2)}` : `Submit: $${p.amount.toFixed(2)}`}</div>
+          </div>
+        </div>`;
+    });
+
+    calcData = { cashoutDate, refNum, section, isSushiType: true, barPersons, sushiPersons, totalTips, barTotal, sushiTotal };
+    document.getElementById('results').style.display = 'block';
+    document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
+  }
+
+  // ── SERVER / BAR BRANCH ───────────────────────────────────────────────────────
+  const totalSales   = parseFloat(document.getElementById('totalSales').value)   || 0;
+  const netCashRaw   = document.getElementById('netCash').value;
+  const netCashAbs   = parseFloat(netCashRaw) || 0;
+  const netCash      = netCashNegative ? -Math.abs(netCashAbs) : Math.abs(netCashAbs);
+  const foodSales    = parseFloat(document.getElementById('foodSales').value)    || 0;
+  const sFoodTipPool = isBarType ? (parseFloat(document.getElementById('sFoodTipPool').value) || 0) : 0;
+  const beoSales     = parseFloat(document.getElementById('beoSales').value)     || 0;
+
+  const serverSplitOn = !isBarType && document.getElementById('serverSplitCb').checked;
+  const splitIncBarOn = !isBarType && document.getElementById('splitIncBarCb').checked;
+
+  let serverValid = true;
+  if (!totalSales)     { document.getElementById('totalSales').classList.add('error'); serverValid = false; }
+  if (netCashRaw === '') { document.getElementById('netCash').classList.add('error');  serverValid = false; }
+  if (!foodSales)      { document.getElementById('foodSales').classList.add('error'); serverValid = false; }
+  if (!serverValid) { showToast('Please fill in all required fields', 'error'); return; }
+
+  // Core tip-out calculations
+  // Bar cashouts: house & busser based on S-Food (sFoodTipPool), no bar tip-out
+  // Server cashouts: house & busser based on total sales, bar tip-out applies
+  const houseBase    = isBarType ? sFoodTipPool : totalSales;
+  const house        = roundHalfUp(houseBase * 0.035);
+  const busser       = roundHalfUp(houseBase * 0.01);
+  const bar          = (isBarType || splitIncBarOn) ? 0 : roundHalfUp(totalSales * 0.01);
+  const expo         = roundHalfUp(foodSales * 0.015);
+  const events       = beoSales > 0 ? roundHalfUp(beoSales * 0.01) : 0;
+  const totalTipOut  = roundHalfUp(house + busser + bar + expo + events);
+  const finalAmount  = roundHalfUp(netCash + totalTipOut);
+
+  // Reset submit button text (in case a previous run had custom amounts)
+  const submitBtn = document.getElementById('submitBtn');
+  submitBtn.disabled = false;
+  submitBtn.textContent = 'Submit Cashout';
+
+  // Tip-out display
+  document.getElementById('tipOutLabel').style.display   = 'block';
+  document.getElementById('tipOutCard').style.display    = 'block';
+  document.getElementById('sushiDistCard').style.display = 'none';
+  document.getElementById('r_house').value  = house.toFixed(2);
+  document.getElementById('r_busser').value = busser.toFixed(2);
+  document.getElementById('r_bar').value    = bar.toFixed(2);
+  document.getElementById('r_expo').value   = expo.toFixed(2);
+  document.getElementById('r_totalTipOut').textContent = fmt(totalTipOut);
+  if (events > 0) {
+    document.getElementById('r_eventsRow').style.display = 'flex';
+    document.getElementById('r_events').value = events.toFixed(2);
+  } else {
+    document.getElementById('r_eventsRow').style.display = 'none';
+    document.getElementById('r_events').value = '0';
+  }
+
+  // Per-person shares
+  let persons = [];
+  if (isBarType && barSplitType === 'hours') {
+    const hd = getCustomHoursData('bar-split-hrs-name', 'bar-split-hrs-val');
+    if (!hd) return;
+    const th = hd.reduce((s, p) => s + p.hours, 0);
+    persons = hd.map(p => ({
+      name: p.name, hours: p.hours,
+      share: p.hours / th,
+      finalAmount: roundHalfUp(finalAmount * (p.hours / th))
+    }));
+  } else if (serverSplitOn && serverSplitType === 'hours') {
+    const hd = getCustomHoursData('server-split-hrs-name', 'server-split-hrs-val');
+    if (!hd) return;
+    const th = hd.reduce((s, p) => s + p.hours, 0);
+    persons = hd.map(p => ({
+      name: p.name, hours: p.hours,
+      share: p.hours / th,
+      finalAmount: roundHalfUp(finalAmount * (p.hours / th))
+    }));
+  } else if (splitIncBarOn && splitIncBarType === 'hours') {
+    const hd = getCustomHoursData('split-incbar-hrs-name', 'split-incbar-hrs-val');
+    if (!hd) return;
+    const th = hd.reduce((s, p) => s + p.hours, 0);
+    persons = hd.map(p => ({
+      name: p.name, hours: p.hours,
+      share: p.hours / th,
+      finalAmount: roundHalfUp(finalAmount * (p.hours / th))
+    }));
+  } else if (names.length === 1) {
+    persons = [{ name: names[0], share: 1, finalAmount }];
+  } else {
+    const share = 1 / names.length;
+    persons = names.map(n => ({ name: n, share, finalAmount: roundHalfUp(finalAmount * share) }));
+  }
+
+  // Display results
+  if (persons.length === 1) {
+    document.getElementById('singleResult').style.display = 'block';
+    document.getElementById('splitResults').innerHTML = '';
+    const banner    = document.getElementById('cashoutBanner');
+    const isDueback = finalAmount < 0;
+    banner.className = 'cashout-banner ' + (isDueback ? 'dueback' : 'owe');
+    document.getElementById('bannerAmount').textContent = isDueback
+      ? `Dueback: -$${Math.abs(finalAmount).toFixed(2)}`
+      : `Submit: $${finalAmount.toFixed(2)}`;
+    const netCashFmt = netCash < 0 ? `-$${Math.abs(netCash).toFixed(2)}` : `$${netCash.toFixed(2)}`;
+    document.getElementById('bannerSub').textContent = `(tip-out $${totalTipOut.toFixed(2)} + Net cash ${netCashFmt})`;
+  } else {
+    document.getElementById('singleResult').style.display = 'none';
+    const splitDiv = document.getElementById('splitResults');
+    splitDiv.innerHTML = '<div class="section-label">Per Person</div>';
+    persons.forEach(p => {
+      const isDueback = p.finalAmount < 0;
+      const pct = Math.round(p.share * 100);
+      const hoursNote = p.hours ? ` · ${p.hours}hrs` : '';
+      splitDiv.innerHTML += `
+        <div class="person-card">
+          <div class="person-card-header">
+            <span>${p.name}</span>
+            <span class="share-pct">${pct}% share${hoursNote}</span>
+          </div>
+          <div class="cashout-banner ${isDueback ? 'dueback' : 'owe'}" style="border-radius:0;margin:0;border:none;border-top:1px solid var(--border)">
+            <div class="banner-amount">${isDueback ? `Dueback: -$${Math.abs(p.finalAmount).toFixed(2)}` : `Submit: $${p.finalAmount.toFixed(2)}`}</div>
+          </div>
+        </div>`;
+    });
+  }
+
+  calcData = {
+    cashoutDate, refNum, section, isSushiType: false,
+    names, totalSales, netCash, foodSales, sFoodTipPool, beoSales,
+    house, busser, bar, expo, events, totalTipOut, finalAmount, persons
+  };
+  document.getElementById('results').style.display = 'block';
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── SUBMIT ────────────────────────────────────────────────────────────────────
+async function submitCashout(isResubmit) {
+  if (!calcData) { showToast('Calculate first', 'error'); return; }
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Submitting…';
+
+  const timestamp = new Date().toLocaleString('en-CA', { timeZone: 'America/Vancouver' });
+  let rows = [];
+
+  if (calcData.isSushiType) {
+    [...calcData.barPersons, ...calcData.sushiPersons].forEach((p, idx) => {
+      rows.push({
+        timestamp,
+        cashoutDate: calcData.cashoutDate,
+        refNum:      calcData.refNum,
+        section:     calcData.section,
+        isFirst:     idx === 0,
+        team:        p.team === 'bar' ? 'Bar' : 'Sushi',
+        name:        p.name,
+        splitType:   p.hours ? 'hours' : 'equal',
+        hours:       p.hours || '',
+        sharePct:    Math.round(p.share * 100),
+        totalTips:   calcData.totalTips,
+        teamShare:   p.team === 'bar' ? calcData.barTotal : calcData.sushiTotal,
+        amount:      p.amount
+      });
+    });
+  } else {
+    rows = calcData.persons.map((p, idx) => ({
+      timestamp,
+      cashoutDate:  calcData.cashoutDate,
+      refNum:       calcData.refNum,
+      section:      calcData.section,
+      isFirst:      idx === 0,
+      team:         '',
+      name:         p.name,
+      splitType:    calcData.names.length > 1 ? 'split' : 'solo',
+      hours:        p.hours || '',
+      sharePct:     Math.round(p.share * 100),
+      totalSales:   calcData.totalSales,
+      netCash:      calcData.netCash,
+      foodSales:    calcData.foodSales,
+      sFoodTipPool: calcData.sFoodTipPool || 0,
+      beoSales:     calcData.beoSales,
+      house:        roundHalfUp(calcData.house       * p.share),
+      busser:       roundHalfUp(calcData.busser      * p.share),
+      bar:          roundHalfUp(calcData.bar         * p.share),
+      expo:         roundHalfUp(calcData.expo        * p.share),
+      events:       roundHalfUp(calcData.events      * p.share),
+      totalTipOut:  roundHalfUp(calcData.totalTipOut * p.share),
+      dueback:      p.finalAmount < 0 ? Math.abs(p.finalAmount) : 0,
+      owesHouse:    p.finalAmount > 0 ? p.finalAmount : 0
+    }));
+  }
+
+  // ── Capture ALL form inputs for full reconstruction ──────────────────────
+  const formInputs = {
+    cashoutDate:     document.getElementById('cashoutDate').value,
+    refNum:          document.getElementById('refNum').value,
+    section:         document.getElementById('section').value,
+    names:           document.getElementById('names').value,
+    sushiNames:      document.getElementById('sushiNames').value,
+    totalSales:      document.getElementById('totalSales').value,
+    netCash:         document.getElementById('netCash').value,
+    netCashNegative: netCashNegative,
+    foodSales:       document.getElementById('foodSales').value,
+    sFoodTipPool:    document.getElementById('sFoodTipPool').value,
+    beoSales:        document.getElementById('beoSales').value,
+    serverSplitOn:   document.getElementById('serverSplitCb')?.checked || false,
+    serverSplitType: serverSplitType,
+    splitIncBarOn:   document.getElementById('splitIncBarCb')?.checked || false,
+    splitIncBarType: splitIncBarType,
+    barSplitType:    barSplitType,
+    sushiBarHoursOn: document.getElementById('sushiBarHoursCb')?.checked || false,
+    sushiTeamHoursOn: document.getElementById('sushiTeamHoursCb')?.checked || false,
+  };
+
+  const payload = { rows, isResubmit: isResubmit === true };
+  const cashoutId = (formInputs.cashoutDate || '') + '[REF' + (formInputs.refNum || '') + ']';
+
+  // ── Save to localStorage BEFORE any network calls ───────────────────────
+  addBackupEntry(formInputs, { ...calcData }, rows, isResubmit === true);
+
+  // ── Dual POST: main + backup, in parallel, with response reading ────────
+  const bodyStr = JSON.stringify(payload);
+
+  // Use text/plain to avoid CORS preflight. Google Apps Script doesn't
+  // handle OPTIONS requests, so application/json would trigger a preflight
+  // that gets blocked. The Apps Script reads e.postData.contents regardless
+  // of Content-Type, so JSON parsing still works on the server side.
+  const postHeaders = { 'Content-Type': 'text/plain;charset=utf-8' };
+
+  // Fire both POSTs in parallel — neither waits for the other
+  const mainPromise = fetch(SCRIPT_URL, { method: 'POST', headers: postHeaders, body: bodyStr })
+    .then(async r => {
+      if (!r.ok) return { status: 'error', message: 'Apps Script error (HTTP ' + r.status + ')' };
+      return r.json();
+    })
+    .catch(() => ({ status: 'error', message: 'Network error, not submitted' }));
+
+  const backupPromise = fetch(BACKUP_SCRIPT_URL, { method: 'POST', headers: postHeaders, body: bodyStr })
+    .then(async r => {
+      if (!r.ok) return { status: 'error', message: 'Backup script error (HTTP ' + r.status + ')' };
+      return r.json();
+    })
+    .catch(() => ({ status: 'error', message: 'Network error' }));
+
+  const [mainResult, backupResult] = await Promise.all([mainPromise, backupPromise]);
+
+  // ── Update localStorage with real statuses ──────────────────────────────
+  updateBackupStatus(cashoutId, 'mainStatus',
+    mainResult.status === 'success' ? 'success' : 'error',
+    mainResult.message || '');
+  updateBackupStatus(cashoutId, 'backupStatus',
+    backupResult.status === 'success' ? 'success' : 'error',
+    backupResult.message || '');
+
+  // ── UI feedback ─────────────────────────────────────────────────────────
+  if (mainResult.status === 'success') {
+    showToast('Submitted successfully!', 'success');
+    btn.textContent = '✓ Submitted';
+    btn.style.opacity = '0.35';
+    btn.style.pointerEvents = 'none';
+    document.getElementById('resetBtn').classList.add('active');
+  } else {
+    // Show problem-first error
+    const msg = mainResult.message || 'Unknown error';
+    // Network errors come from our catch block, not from Apps Script error codes
+    const isNetworkError = msg.startsWith('Network error') || msg.startsWith('Apps Script error');
+    const displayMsg = isNetworkError ? msg : parseErrorCode(msg).problem;
+    showToast(displayMsg + ' — Cashout data saved to iPad', 'error');
+    btn.disabled = false;
+    btn.textContent = 'Submit Cashout';
+  }
+
+  // Update backups screen if it's visible
+  if (document.getElementById('backupsScreen').style.display !== 'none') {
+    renderBackupsTable();
+  }
+}
+
+// ── RESET ─────────────────────────────────────────────────────────────────────
+function resetForm() {
+  ['cashoutDate','refNum','names','totalSales','netCash','foodSales','sFoodTipPool','beoSales','sushiNames']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  // Re-set date to today
+  document.getElementById('cashoutDate').value = new Date()
+    .toLocaleDateString('en-CA', { timeZone: 'America/Vancouver' });
+
+  document.getElementById('section').value = '';
+  document.getElementById('results').style.display = 'none';
+  const sb = document.getElementById('submitBtn');
+  sb.disabled = false;
+  sb.textContent = 'Submit Cashout';
+  sb.style.opacity = '';
+  sb.style.pointerEvents = '';
+  document.getElementById('resetBtn').classList.remove('active');
+
+  // Reset field visibility
+  document.getElementById('sushiNamesField').style.display       = 'none';
+  document.getElementById('customRowSushiHours').style.display   = 'none';
+  document.getElementById('salesFiguresHint').style.display      = 'inline';
+  document.getElementById('salesFiguresFields').style.display    = 'none';
+  document.getElementById('calcBtn').classList.add('dim');
+  document.getElementById('totalSalesField').style.display       = 'block';
+  document.getElementById('foodSalesField').style.display        = 'block';
+  document.getElementById('beoSalesField').style.display         = 'block';
+  document.getElementById('sFoodTipPoolField').style.display     = 'none';
+
+  // Reset customization checkboxes and sections
+  ['serverSplitCb','splitIncBarCb','sushiBarHoursCb','sushiTeamHoursCb'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.checked = false;
+  });
+  ['serverSplitSection','splitIncBarSection','sushiBarHoursSection','sushiTeamHoursSection'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.style.display = 'none';
+  });
+  ['customRowServerSplit','customRowSplitIncBar','customRowBarSplit','customRowSushiHours','customRowSushiTeamHours'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.style.display = 'none';
+  });
+  serverSplitType = 'equal'; splitIncBarType = 'equal'; barSplitType = 'equal';
+  ['serverSplitEqualBtn','splitIncBarEqualBtn','barSplitEqualBtn'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.classList.add('active');
+  });
+  ['serverSplitHoursBtn','splitIncBarHoursBtn','barSplitHoursBtn'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.classList.remove('active');
+  });
+  ['serverSplitHoursWrapper','splitIncBarHoursWrapper','barSplitHoursWrapper'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.style.display = 'none';
+  });
+  ['serverSplitEqualNote','splitIncBarEqualNote','barSplitEqualNote'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.style.display = 'block';
+  });
+
+  // Reset names label
+  document.getElementById('namesLabel').innerHTML =
+    'NAME(S) <span style="color:var(--muted);font-size:10px;font-weight:400">— multiple = equal split unless customized below</span>';
+
+  // Reset sign button
+  netCashNegative = true;
+  const signBtn = document.getElementById('netCashSignBtn');
+  signBtn.style.display = 'inline-flex';
+  signBtn.textContent = '−';
+  signBtn.classList.remove('positive');
+  document.getElementById('netCashLabel').textContent = 'TOTAL CASH DUE (NET CASH) ';
+
+  barSplitType = 'equal';
+  calcData = null;
+  isResubmitMode = false;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── CUSTOMIZATION HELPERS ─────────────────────────────────────────────────────
+function createCustomHoursRow(name, nc, hc) {
+  const d = document.createElement('div');
+  d.className = 'custom-hours-grid';
+  d.innerHTML = `<input type="text" class="${nc}" placeholder="Name" value="${name}">` +
+                `<input type="number" class="${hc} hrs-input" inputmode="decimal" step="0.5" placeholder="hrs">` +
+                `<button type="button" class="del-row-btn" title="Remove" onclick="this.closest('.custom-hours-grid').remove()">×</button>`;
+  return d;
+}
+
+function getCustomHoursData(nameClass, hoursClass) {
+  const nameInputs  = document.querySelectorAll('.' + nameClass);
+  const hoursInputs = document.querySelectorAll('.' + hoursClass);
+  const data = [];
+  for (let i = 0; i < nameInputs.length; i++) {
+    const name  = nameInputs[i].value.trim();
+    const hours = parseFloat(hoursInputs[i].value);
+    if (!name || isNaN(hours) || hours <= 0) {
+      showToast('Enter name and hours for all team members', 'error');
+      return null;
+    }
+    data.push({ name, hours });
+  }
+  if (!data.length) { showToast('Add at least one team member with hours', 'error'); return null; }
+  return data;
+}
+
+// ── SERVER SPLIT ──────────────────────────────────────────────────────────────
+function toggleServerSplit() {
+  const on = document.getElementById('serverSplitCb').checked;
+  if (on) {
+    document.getElementById('splitIncBarCb').checked = false;
+    document.getElementById('splitIncBarSection').style.display = 'none';
+  }
+  document.getElementById('serverSplitSection').style.display = on ? 'block' : 'none';
+  if (on && serverSplitType === 'hours') syncHoursFromNames(document.getElementById('serverSplitHoursInputs'), 'server-split-hrs-name', 'server-split-hrs-val');
+}
+
+function selectServerSplitType(type) {
+  serverSplitType = type;
+  document.getElementById('serverSplitEqualBtn').classList.toggle('active', type === 'equal');
+  document.getElementById('serverSplitHoursBtn').classList.toggle('active', type === 'hours');
+  document.getElementById('serverSplitEqualNote').style.display    = type === 'equal' ? 'block' : 'none';
+  document.getElementById('serverSplitHoursWrapper').style.display = type === 'hours' ? 'block' : 'none';
+  if (type === 'hours') syncHoursFromNames(document.getElementById('serverSplitHoursInputs'), 'server-split-hrs-name', 'server-split-hrs-val');
+}
+
+function addServerSplitHoursEntry() {
+  document.getElementById('serverSplitHoursInputs')
+    .appendChild(createCustomHoursRow('', 'server-split-hrs-name', 'server-split-hrs-val'));
+}
+
+// ── SPLIT INCLUDING BAR ───────────────────────────────────────────────────────
+function toggleSplitIncBar() {
+  const on = document.getElementById('splitIncBarCb').checked;
+  if (on) {
+    document.getElementById('serverSplitCb').checked = false;
+    document.getElementById('serverSplitSection').style.display = 'none';
+  }
+  document.getElementById('splitIncBarSection').style.display = on ? 'block' : 'none';
+  if (on && splitIncBarType === 'hours') syncHoursFromNames(document.getElementById('splitIncBarHoursInputs'), 'split-incbar-hrs-name', 'split-incbar-hrs-val');
+}
+
+function selectSplitIncBarType(type) {
+  splitIncBarType = type;
+  document.getElementById('splitIncBarEqualBtn').classList.toggle('active', type === 'equal');
+  document.getElementById('splitIncBarHoursBtn').classList.toggle('active', type === 'hours');
+  document.getElementById('splitIncBarEqualNote').style.display    = type === 'equal' ? 'block' : 'none';
+  document.getElementById('splitIncBarHoursWrapper').style.display = type === 'hours' ? 'block' : 'none';
+  if (type === 'hours') syncHoursFromNames(document.getElementById('splitIncBarHoursInputs'), 'split-incbar-hrs-name', 'split-incbar-hrs-val');
+}
+
+function addSplitIncBarHoursEntry() {
+  document.getElementById('splitIncBarHoursInputs')
+    .appendChild(createCustomHoursRow('', 'split-incbar-hrs-name', 'split-incbar-hrs-val'));
+}
+
+// ── BAR SPLIT TYPE ────────────────────────────────────────────────────────────
+function selectBarSplitType(type) {
+  barSplitType = type;
+  document.getElementById('barSplitEqualBtn').classList.toggle('active', type === 'equal');
+  document.getElementById('barSplitHoursBtn').classList.toggle('active', type === 'hours');
+  document.getElementById('barSplitEqualNote').style.display    = type === 'equal' ? 'block' : 'none';
+  document.getElementById('barSplitHoursWrapper').style.display = type === 'hours' ? 'block' : 'none';
+  if (type === 'hours') syncHoursFromNames(document.getElementById('barSplitHoursInputs'), 'bar-split-hrs-name', 'bar-split-hrs-val');
+}
+
+function addBarSplitHoursEntry() {
+  document.getElementById('barSplitHoursInputs')
+    .appendChild(createCustomHoursRow('', 'bar-split-hrs-name', 'bar-split-hrs-val'));
+}
+
+function toggleSushiBarHours() {
+  const on = document.getElementById('sushiBarHoursCb').checked;
+  document.getElementById('sushiBarHoursSection').style.display = on ? 'block' : 'none';
+  if (on) {
+    const names = getNames();
+    const c = document.getElementById('sushiBarHoursInputs');
+    c.innerHTML = '';
+    (names.length ? names : ['']).forEach(n =>
+      c.appendChild(createCustomHoursRow(n, 'sushi-bar-hrs-name', 'sushi-bar-hrs-val')));
+  }
+}
+
+function addSushiBarHoursEntry() {
+  document.getElementById('sushiBarHoursInputs')
+    .appendChild(createCustomHoursRow('', 'sushi-bar-hrs-name', 'sushi-bar-hrs-val'));
+}
+
+function toggleSushiTeamHours() {
+  const on = document.getElementById('sushiTeamHoursCb').checked;
+  document.getElementById('sushiTeamHoursSection').style.display = on ? 'block' : 'none';
+  if (on) {
+    const raw   = document.getElementById('sushiNames').value;
+    const names = raw.split(',').map(n => n.trim()).filter(n => n.length > 0);
+    const c = document.getElementById('sushiTeamHoursInputs');
+    c.innerHTML = '';
+    (names.length ? names : ['']).forEach(n =>
+      c.appendChild(createCustomHoursRow(n, 'sushi-team-hrs-name', 'sushi-team-hrs-val')));
+  }
+}
+
+function addSushiTeamHoursEntry() {
+  document.getElementById('sushiTeamHoursInputs')
+    .appendChild(createCustomHoursRow('', 'sushi-team-hrs-name', 'sushi-team-hrs-val'));
+}
+
+// ── TIPOUT OVERRIDE ───────────────────────────────────────────────────────────
+['r_house','r_busser','r_bar','r_expo','r_events'].forEach(id => {
+  document.getElementById(id).addEventListener('input', function () {
+    const btn = document.getElementById('submitBtn');
+    if (!btn.disabled && btn.innerHTML.indexOf('Submitted') === -1) {
+      btn.innerHTML = 'Submit Cashout<span class="btn-sub">With Custom Amounts</span>';
+    }
+    recalcFromTipouts();
+  });
+});
+
+function recalcFromTipouts() {
+  if (!calcData || calcData.isSushiType) return;
+
+  const house       = parseFloat(document.getElementById('r_house').value)  || 0;
+  const busser      = parseFloat(document.getElementById('r_busser').value) || 0;
+  const bar         = parseFloat(document.getElementById('r_bar').value)    || 0;
+  const expo        = parseFloat(document.getElementById('r_expo').value)   || 0;
+  const events      = parseFloat(document.getElementById('r_events').value) || 0;
+  const totalTipOut = roundHalfUp(house + busser + bar + expo + events);
+  const finalAmount = roundHalfUp(calcData.netCash + totalTipOut);
+
+  document.getElementById('r_totalTipOut').textContent = fmt(totalTipOut);
+
+  // Update calcData so submitCashout() picks up the overridden values
+  Object.assign(calcData, { house, busser, bar, expo, events, totalTipOut, finalAmount });
+  calcData.persons = calcData.persons.map(p => ({
+    ...p, finalAmount: roundHalfUp(finalAmount * p.share)
+  }));
+
+  const netCashFmt = calcData.netCash < 0
+    ? `-$${Math.abs(calcData.netCash).toFixed(2)}`
+    : `$${calcData.netCash.toFixed(2)}`;
+
+  if (calcData.persons.length === 1) {
+    const isDueback = finalAmount < 0;
+    document.getElementById('cashoutBanner').className = 'cashout-banner ' + (isDueback ? 'dueback' : 'owe');
+    document.getElementById('bannerAmount').textContent = isDueback
+      ? `Dueback: -$${Math.abs(finalAmount).toFixed(2)}`
+      : `Submit: $${finalAmount.toFixed(2)}`;
+    document.getElementById('bannerSub').textContent = `(tip-out $${totalTipOut.toFixed(2)} + Net cash ${netCashFmt})`;
+  } else {
+    const splitDiv = document.getElementById('splitResults');
+    splitDiv.innerHTML = '<div class="section-label">Per Person</div>';
+    calcData.persons.forEach(p => {
+      const isDueback = p.finalAmount < 0;
+      const pct = Math.round(p.share * 100);
+      const hoursNote = p.hours ? ` · ${p.hours}hrs` : '';
+      splitDiv.innerHTML += `
+        <div class="person-card">
+          <div class="person-card-header">
+            <span>${p.name}</span>
+            <span class="share-pct">${pct}% share${hoursNote}</span>
+          </div>
+          <div class="cashout-banner ${isDueback ? 'dueback' : 'owe'}" style="border-radius:0;margin:0;border:none;border-top:1px solid var(--border)">
+            <div class="banner-amount">${isDueback ? `Dueback: -$${Math.abs(p.finalAmount).toFixed(2)}` : `Submit: $${p.finalAmount.toFixed(2)}`}</div>
+          </div>
+        </div>`;
+    });
+  }
+}
+
+// ── BACKUPS SCREEN ───────────────────────────────────────────────────────────
+let selectedBackupId = null;
+
+function toggleBackupsScreen() {
+  const screen = document.getElementById('backupsScreen');
+  const isShowing = screen.style.display === 'block';
+
+  if (isShowing) {
+    // Hide backups, show main form
+    screen.style.display = 'none';
+    document.querySelectorAll('.container > *:not(#backupsScreen):not([id="backupsScreen"])').forEach(el => {
+      if (el.id !== 'backupsScreen') el.style.display = '';
+    });
+    document.getElementById('backupsToggle').textContent = 'Backups';
+  } else {
+    // Show backups, hide main form elements
+    document.querySelectorAll('.container > *').forEach(el => {
+      if (el.id !== 'backupsScreen') el.style.display = 'none';
+    });
+    screen.style.display = 'block';
+    document.getElementById('backupsToggle').textContent = 'Calculator';
+    renderBackupsTable();
+  }
+  document.getElementById('backupDetail').style.display = 'none';
+  selectedBackupId = null;
+}
+
+function renderBackupsTable() {
+  const backups = getBackups();
+  const tbody = document.getElementById('backupsTableBody');
+  const empty = document.getElementById('backupsEmpty');
+
+  if (!backups.length) {
+    tbody.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  // Check for pending entries to highlight the toggle button
+  const hasPending = backups.some(b => b.mainStatus === 'pending' || b.mainStatus === 'error');
+  document.getElementById('backupsToggle').classList.toggle('has-pending', hasPending);
+
+  tbody.innerHTML = backups.map((b, idx) => {
+    const display = getDisplayStatus(b);
+    const statusClass = display.status.toLowerCase();
+    const names = b.formInputs?.names || b.rows?.map(r => r.name).join(', ') || '';
+    const section = b.formInputs?.section || b.rows?.[0]?.section || '';
+    const sharedBy = b.rows?.length || 1;
+
+    // Get a display amount
+    let amount = '';
+    if (b.calcResult?.isSushiType) {
+      amount = fmt(b.calcResult.totalTips || 0);
+    } else if (b.calcResult?.finalAmount !== undefined) {
+      amount = b.calcResult.finalAmount < 0
+        ? '-' + fmt(b.calcResult.finalAmount)
+        : fmt(b.calcResult.finalAmount);
+    }
+
+    return `<tr onclick="selectBackupRow('${b.cashoutId}')" class="${selectedBackupId === b.cashoutId ? 'selected' : ''}">
+      <td style="white-space:nowrap;font-size:10px;">${b.cashoutId}</td>
+      <td><span class="status-badge ${statusClass}">${display.status}</span></td>
+      <td class="msg-cell">${display.message.replace(/^Unexpected error:\s*/i, '')}</td>
+      <td>${names}</td>
+      <td style="white-space:nowrap;">${section}</td>
+      <td style="text-align:center;">${sharedBy}</td>
+      <td style="white-space:nowrap;">${amount}</td>
+    </tr>`;
+  }).join('');
+}
+
+function selectBackupRow(cashoutId) {
+  selectedBackupId = cashoutId;
+  const detail = document.getElementById('backupDetail');
+  detail.style.display = 'block';
+  document.getElementById('backupDetailLabel').textContent = cashoutId;
+
+  // Update button states based on entry status
+  const backups = getBackups();
+  const entry = backups.find(b => b.cashoutId === cashoutId);
+  if (entry) {
+    const display = getDisplayStatus(entry);
+    const resubBtn = document.getElementById('backupResubmitBtn');
+    const syncBtn = document.getElementById('backupMarkSyncedBtn');
+    if (display.status === 'Synced') {
+      resubBtn.style.display = 'none';
+      syncBtn.style.display = 'none';
+    } else {
+      resubBtn.style.display = '';
+      syncBtn.style.display = '';
+    }
+  }
+  renderBackupsTable();  // re-render to highlight selected row
+}
+
+function resubmitFromBackup() {
+  if (!selectedBackupId) return;
+  const backups = getBackups();
+  const entry = backups.find(b => b.cashoutId === selectedBackupId);
+  if (!entry || !entry.formInputs) {
+    showToast('No form data stored for this entry', 'error');
+    return;
+  }
+
+  // Switch back to calculator view
+  toggleBackupsScreen();
+
+  // Load form inputs from the backup entry
+  loadFromBackup(entry);
+}
+
+function loadFromBackup(entry) {
+  const fi = entry.formInputs;
+
+  // 1. Set the section dropdown first — this triggers the change handler
+  //    which shows/hides the right conditional fields
+  document.getElementById('section').value = fi.section || '';
+  document.getElementById('section').dispatchEvent(new Event('change'));
+
+  // 2. Now populate the fields that the change handler made visible
+  document.getElementById('cashoutDate').value = fi.cashoutDate || '';
+  document.getElementById('refNum').value = fi.refNum || '';
+  document.getElementById('names').value = fi.names || '';
+  document.getElementById('sushiNames').value = fi.sushiNames || '';
+  document.getElementById('totalSales').value = fi.totalSales || '';
+  document.getElementById('netCash').value = fi.netCash || '';
+  document.getElementById('foodSales').value = fi.foodSales || '';
+  document.getElementById('sFoodTipPool').value = fi.sFoodTipPool || '';
+  document.getElementById('beoSales').value = fi.beoSales || '';
+
+  // 3. Restore the net cash sign toggle
+  if (fi.netCashNegative !== undefined) {
+    netCashNegative = fi.netCashNegative;
+    const signBtn = document.getElementById('netCashSignBtn');
+    signBtn.textContent = netCashNegative ? '−' : '+';
+    netCashNegative ? signBtn.classList.remove('positive') : signBtn.classList.add('positive');
+  }
+
+  // 4. Restore split type checkboxes and types
+  if (fi.serverSplitOn) {
+    document.getElementById('serverSplitCb').checked = true;
+    toggleServerSplit();
+    if (fi.serverSplitType === 'hours') selectServerSplitType('hours');
+  }
+  if (fi.splitIncBarOn) {
+    document.getElementById('splitIncBarCb').checked = true;
+    toggleSplitIncBar();
+    if (fi.splitIncBarType === 'hours') selectSplitIncBarType('hours');
+  }
+  if (fi.barSplitType === 'hours') selectBarSplitType('hours');
+  if (fi.sushiBarHoursOn) {
+    document.getElementById('sushiBarHoursCb').checked = true;
+    toggleSushiBarHours();
+  }
+  if (fi.sushiTeamHoursOn) {
+    document.getElementById('sushiTeamHoursCb').checked = true;
+    toggleSushiTeamHours();
+  }
+
+  // 5. Mark this as a resubmit so submitCashout sends isResubmit: true
+  isResubmitMode = true;
+
+  showToast('Loaded from backup — review and submit', 'success');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function markAsSynced() {
+  if (!selectedBackupId) return;
+  if (!confirm('Mark ' + selectedBackupId + ' as manually synced? Only do this if you already entered it into the sheet by hand.')) return;
+  const backups = getBackups();
+  const entry = backups.find(b => b.cashoutId === selectedBackupId);
+  if (entry) {
+    entry.mainStatus = 'manual';
+    entry.mainMessage = 'Manually synced';
+    entry.backupStatus = 'manual';
+    saveBackups(backups);
+  }
+  selectedBackupId = null;
+  document.getElementById('backupDetail').style.display = 'none';
+  renderBackupsTable();
+  showToast('Marked as synced', 'success');
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+(function () {
+  // Set today's date as default
+  document.getElementById('cashoutDate').value =
+    new Date().toLocaleDateString('en-CA', { timeZone: 'America/Vancouver' });
+
+  // Check for pending backups and highlight the toggle button
+  const backups = getBackups();
+  const hasPending = backups.some(b => b.mainStatus === 'pending' || b.mainStatus === 'error');
+  document.getElementById('backupsToggle').classList.toggle('has-pending', hasPending);
+})();
+</script>
+</body>
+</html>
