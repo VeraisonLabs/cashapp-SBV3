@@ -497,6 +497,42 @@
     font-weight: 500;
   }
 
+  /* Persistent error banner */
+  .error-banner {
+    background: rgba(248,81,73,0.1);
+    border: 2px solid var(--red);
+    border-radius: var(--radius);
+    padding: 24px 20px;
+    margin: 12px 0;
+    text-align: center;
+  }
+  .error-banner .error-problem {
+    font-family: 'Syne', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--red);
+    margin-bottom: 12px;
+    line-height: 1.4;
+  }
+  .error-banner .error-action {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 16px;
+    letter-spacing: 0.05em;
+  }
+  .error-banner .error-cashout-id {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 16px;
+    font-family: 'DM Mono', monospace;
+  }
+  .error-banner .error-reassurance {
+    font-size: 13px;
+    color: var(--green);
+    font-weight: 500;
+  }
+
   /* Backups screen */
   .backups-toggle {
     background: var(--surface2);
@@ -854,6 +890,14 @@
 
     <!-- Split / sushi per-person results -->
     <div id="splitResults"></div>
+
+    <!-- Persistent error banner (shown on submit failure, cleared by Reset) -->
+    <div class="error-banner" id="errorBanner" style="display:none;">
+      <div class="error-problem" id="errorProblem"></div>
+      <div class="error-action">Inform Manager</div>
+      <div class="error-cashout-id" id="errorCashoutId"></div>
+      <div class="error-reassurance">✓ Cashout data saved to iPad</div>
+    </div>
 
     <button class="submit-btn" id="submitBtn" onclick="submitCashout(isResubmitMode)">
       Submit Cashout
@@ -1562,14 +1606,20 @@ async function submitCashout(isResubmit) {
     btn.style.pointerEvents = 'none';
     document.getElementById('resetBtn').classList.add('active');
   } else {
-    // Show problem-first error
+    // Show persistent error banner (problem-first, reassurance-last)
     const msg = mainResult.message || 'Unknown error';
-    // Network errors come from our catch block, not from Apps Script error codes
     const isNetworkError = msg.startsWith('Network error') || msg.startsWith('Apps Script error');
     const displayMsg = isNetworkError ? msg : parseErrorCode(msg).problem;
-    showToast(displayMsg + ' — Cashout data saved to iPad', 'error');
-    btn.disabled = false;
-    btn.textContent = 'Submit Cashout';
+
+    document.getElementById('errorProblem').textContent = displayMsg;
+    document.getElementById('errorCashoutId').textContent = 'Cashout ID: ' + cashoutId;
+    document.getElementById('errorBanner').style.display = 'block';
+    document.getElementById('errorBanner').scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    btn.disabled = true;
+    btn.textContent = 'Submission issue — see above';
+    btn.style.opacity = '0.35';
+    document.getElementById('resetBtn').classList.add('active');
   }
 
   // Update backups screen if it's visible
@@ -1580,6 +1630,9 @@ async function submitCashout(isResubmit) {
 
 // ── RESET ─────────────────────────────────────────────────────────────────────
 function resetForm() {
+  // Clear error banner
+  document.getElementById('errorBanner').style.display = 'none';
+
   ['cashoutDate','refNum','names','totalSales','netCash','foodSales','sFoodTipPool','beoSales','sushiNames']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   // Re-set date to today
