@@ -916,7 +916,6 @@
     <!-- Persistent success banner (shown on submit success, cleared by Reset) -->
     <div class="success-banner" id="successBanner" style="display:none;">
       <div class="success-message">✓ Submitted Successfully</div>
-      <div class="success-cashout-id" id="successCashoutId"></div>
     </div>
 
     <!-- Persistent error banner (shown on submit failure, cleared by Reset) -->
@@ -1628,7 +1627,6 @@ async function submitCashout(isResubmit) {
 
   // ── UI feedback ─────────────────────────────────────────────────────────
   if (mainResult.status === 'success') {
-    document.getElementById('successCashoutId').textContent = 'Cashout ID: ' + cashoutId;
     document.getElementById('successBanner').style.display = 'block';
     document.getElementById('successBanner').scrollIntoView({ behavior: 'smooth', block: 'center' });
     btn.textContent = '✓ Submitted';
