@@ -257,6 +257,14 @@ The Backups screen on the iPad is the safety net. Every cashout ever submitted f
 
 ---
 
+## Important: never use Private Browsing
+
+If Safari is in Private Browsing mode, localStorage is wiped when the tab closes. This means all backup data stored on the iPad would be lost. The home screen shortcut avoids this by always opening in a normal Safari session, but if someone ever opens the app URL manually in a private tab, backups will not persist.
+
+**Rule:** always use the home screen shortcut, never open the app URL directly in a private Safari tab.
+
+---
+
 ## What to do when nothing in this doc helps
 
 1. Don't delete anything on the iPad or in the master sheet

@@ -497,6 +497,28 @@
     font-weight: 500;
   }
 
+  /* Persistent submit banners (success + error) */
+  .success-banner {
+    background: rgba(63,185,80,0.1);
+    border: 2px solid var(--green);
+    border-radius: var(--radius);
+    padding: 24px 20px;
+    margin: 12px 0;
+    text-align: center;
+  }
+  .success-banner .success-message {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--green);
+    margin-bottom: 8px;
+  }
+  .success-banner .success-cashout-id {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+  }
+
   /* Persistent error banner */
   .error-banner {
     background: rgba(248,81,73,0.1);
@@ -890,6 +912,12 @@
 
     <!-- Split / sushi per-person results -->
     <div id="splitResults"></div>
+
+    <!-- Persistent success banner (shown on submit success, cleared by Reset) -->
+    <div class="success-banner" id="successBanner" style="display:none;">
+      <div class="success-message">✓ Submitted Successfully</div>
+      <div class="success-cashout-id" id="successCashoutId"></div>
+    </div>
 
     <!-- Persistent error banner (shown on submit failure, cleared by Reset) -->
     <div class="error-banner" id="errorBanner" style="display:none;">
@@ -1600,7 +1628,9 @@ async function submitCashout(isResubmit) {
 
   // ── UI feedback ─────────────────────────────────────────────────────────
   if (mainResult.status === 'success') {
-    showToast('Submitted successfully!', 'success');
+    document.getElementById('successCashoutId').textContent = 'Cashout ID: ' + cashoutId;
+    document.getElementById('successBanner').style.display = 'block';
+    document.getElementById('successBanner').scrollIntoView({ behavior: 'smooth', block: 'center' });
     btn.textContent = '✓ Submitted';
     btn.style.opacity = '0.35';
     btn.style.pointerEvents = 'none';
@@ -1630,8 +1660,9 @@ async function submitCashout(isResubmit) {
 
 // ── RESET ─────────────────────────────────────────────────────────────────────
 function resetForm() {
-  // Clear error banner
+  // Clear submit banners
   document.getElementById('errorBanner').style.display = 'none';
+  document.getElementById('successBanner').style.display = 'none';
 
   ['cashoutDate','refNum','names','totalSales','netCash','foodSales','sFoodTipPool','beoSales','sushiNames']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
