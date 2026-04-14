@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SB CashApp — Troubleshooting Guide</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --sand: #f5f0e8;
+      --ocean: #1a5276;
+      --ocean-light: #2980b9;
+      --seafoam: #d5f4e6;
+      --coral: #e74c3c;
+      --coral-light: #fdecea;
+      --amber: #f39c12;
+      --amber-light: #fef9e7;
+      --green: #27ae60;
+      --green-light: #eafaf1;
+      --slate: #2c3e50;
+      --gray-100: #f8f9fa;
+      --gray-200: #e9ecef;
+      --gray-300: #dee2e6;
+      --gray-500: #6c757d;
+      --gray-700: #495057;
+      --radius: 10px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: var(--sand);
+      color: var(--slate);
+      line-height: 1.65;
+      padding: 0;
+    }
+
+    /* ── Header (matches the cashout app's color palette) ── */
+    header {
+      background: #0d1117;
+      color: #e6edf3;
+      padding: 3rem 2rem 2.5rem;
+      text-align: center;
+      border-bottom: 3px solid #f0a500;
+    }
+
+    header h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      margin-bottom: 0.4rem;
+      color: #ffffff;
+    }
+
+    header .subtitle {
+      font-size: 1rem;
+      font-weight: 400;
+      color: #f0a500;
+      letter-spacing: 0.05em;
+    }
+
+    /* ── Main container ── */
+    main {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 2rem 1.25rem 4rem;
+    }
+
+    /* ── Section headings ── */
+    h2 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--ocean);
+      margin: 2.5rem 0 1rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 2px solid var(--ocean-light);
+    }
+
+    h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--slate);
+      margin: 1.8rem 0 0.6rem;
+    }
+
+    p {
+      margin-bottom: 0.85rem;
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: #fff;
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    }
+
+    .card h3 {
+      margin-top: 0;
+    }
+
+    /* ── Callout boxes ── */
+    .callout {
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      margin-bottom: 1rem;
+      font-size: 0.95rem;
+    }
+
+    .callout-safe {
+      background: var(--green-light);
+      border-left: 4px solid var(--green);
+    }
+
+    .callout-warn {
+      background: var(--amber-light);
+      border-left: 4px solid var(--amber);
+    }
+
+    .callout-error {
+      background: var(--coral-light);
+      border-left: 4px solid var(--coral);
+    }
+
+    .callout-info {
+      background: #eaf2f8;
+      border-left: 4px solid var(--ocean-light);
+    }
+
+    .callout h4 {
+      margin: 0 0 0.25rem 0;
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    /* ── Layers table ── */
+    .layers-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      margin: 1rem 0 1.5rem;
+    }
+
+    .layer-item {
+      background: #fff;
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      position: relative;
+      margin-bottom: 1.25rem;
+    }
+
+    /* Connecting line between layers — creates the sequence/timeline visual */
+    /* left offset centers the line under the 36px circle: padding-left (1.25rem) + half-circle (18px) - half-line (1.5px) */
+    .layer-item:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      left: calc(1.25rem + 16.5px);
+      top: calc(100% - 0.25rem);
+      width: 3px;
+      height: 1.25rem;
+      background: var(--ocean-light);
+      opacity: 0.5;
+      border-radius: 2px;
+    }
+
+    .layer-num {
+      flex-shrink: 0;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--ocean);
+      color: #fff;
+      font-weight: 700;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .layer-body>strong {
+      display: block;
+      color: var(--ocean);
+    }
+
+    .layer-body span {
+      font-size: 0.9rem;
+      color: var(--gray-500);
+    }
+
+    /* ── Status reference table ── */
+    .status-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      margin: 1rem 0 1.5rem;
+      background: #fff;
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    }
+
+    .status-table thead {
+      background: var(--ocean);
+      color: #fff;
+    }
+
+    .status-table th {
+      text-align: left;
+      padding: 0.7rem 0.75rem;
+      font-weight: 600;
+    }
+
+    .status-table td {
+      padding: 0.65rem 0.75rem;
+      border-bottom: 1px solid var(--gray-200);
+      vertical-align: top;
+    }
+
+    .status-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .status-table tbody tr:nth-child(even) {
+      background: var(--gray-100);
+    }
+
+    .status-table a {
+      color: var(--ocean);
+      text-decoration: none;
+      border-bottom: 1px dashed var(--ocean-light);
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .status-table a:hover {
+      border-bottom-style: solid;
+      background: rgba(41, 128, 185, 0.08);
+    }
+
+    /* Anchor scroll offset so the heading isn't hidden behind whatever header */
+    .error-anchor {
+      scroll-margin-top: 1rem;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.15rem 0.55rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .badge-synced {
+      background: var(--green-light);
+      color: var(--green);
+    }
+
+    .badge-pending {
+      background: var(--amber-light);
+      color: #b7791f;
+    }
+
+    .badge-error {
+      background: var(--coral-light);
+      color: var(--coral);
+    }
+
+    .badge-conflict {
+      background: #f3e8ff;
+      color: #7c3aed;
+    }
+
+    .badge-partial {
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    /* ── Ordered steps ── */
+    .steps {
+      list-style: none;
+      counter-reset: step;
+      padding-left: 0;
+      margin: 0.5rem 0 1rem;
+    }
+
+    .steps li {
+      counter-increment: step;
+      padding: 0.45rem 0 0.45rem 2.2rem;
+      position: relative;
+      font-size: 0.95rem;
+    }
+
+    .steps li::before {
+      content: counter(step);
+      position: absolute;
+      left: 0;
+      top: 0.4rem;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--ocean-light);
+      color: #fff;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-align: center;
+      line-height: 24px;
+    }
+
+    /* ── Code / monospace ── */
+    code {
+      background: var(--gray-200);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-size: 0.88em;
+      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    }
+
+    /* ── Divider ── */
+    hr {
+      border: none;
+      border-top: 1px solid var(--gray-300);
+      margin: 2rem 0;
+    }
+
+    /* ── Change log ── */
+    .changelog {
+      font-size: 0.85rem;
+      color: var(--gray-700);
+    }
+
+    .changelog table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0.5rem;
+    }
+
+    .changelog th,
+    .changelog td {
+      text-align: left;
+      padding: 0.5rem 0.6rem;
+      border-bottom: 1px solid var(--gray-200);
+    }
+
+    .changelog th {
+      font-weight: 600;
+      background: var(--gray-100);
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 2rem 1rem;
+      color: var(--gray-500);
+      font-size: 0.82rem;
+    }
+
+    /* ── Print ── */
+    @media print {
+      header {
+        background: var(--ocean) !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      body {
+        background: #fff;
+      }
+
+      .card {
+        box-shadow: none;
+        border: 1px solid var(--gray-300);
+      }
+    }
+
+    /* ── Responsive ── */
+    @media (min-width: 600px) {
+
+      main {
+        padding: 2.5rem 2rem 4rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <h1>Troubleshooting Guide</h1>
+    <div class="subtitle">SB Cashout Calculator</div>
+  </header>
+
+  <main>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- QUICK ORIENTATION -->
+    <!-- ═══════════════════════════════════════════ -->
+    <h2>Quick Orientation</h2>
+    <p>There are <strong>three layers</strong> of data storage to prevent cashout data from being lost. This document
+      helps identify issues and provides steps to fix.</p>
+
+    <div class="layers-grid">
+      <div class="layer-item">
+        <div class="layer-num">1</div>
+        <div class="layer-body">
+          <strong>Main Cashout Sheet</strong>
+          <span>The normal Google Sheet where cashouts land. Used on a normal day.</span></br>
+          <a href="">View Master Cashout spreadsheet(to be added)</a>
+        </div>
+      </div>
+      <div class="layer-item">
+        <div class="layer-num">2</div>
+        <div class="layer-body">
+          <strong>Backup Sheet</strong>
+          <span>A separate Google Sheet with a raw copy of every submission. Quick access to all cashout data if missing
+            from Master Sheet.</span></br>
+          <a href="">View Backup Cashout spreadsheet(to be added)</a>
+        </div>
+      </div>
+      <div class="layer-item">
+        <div class="layer-num">3</div>
+        <div class="layer-body">
+          <strong>iPad Local Storage</strong>
+          <span>Cashouts stored directly on the iPad itself. Saves you when WiFi is down, Google is down, or Apps Script
+            is broken. Retains 7-days of data <strong>UNLESS: the browsers local storage is manually deleted, or a
+              private browser is used.</strong> </span></br>
+          To View the Cashout Log, click the <code>Cashout Log</code> button on the iPad.
+        </div>
+      </div>
+    </div>
+
+    <div class="callout callout-safe">
+      <h4>Note:</h4>
+      If the Error message ends with <code>&checkmark; Cashout data saved to iPad</code>,<strong> nothing is
+        lost.</strong></br>
+      The <code>Cashout Log</code> will have the cashout data and error message.</br>
+      Solutions for each error message can be found below.
+    </div>
+
+
+    <hr>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- STATUS REFERENCE TABLE -->
+    <!-- ═══════════════════════════════════════════ -->
+    <h2>Status References</h2>
+
+    <div style="overflow-x:auto;">
+      <table class="status-table">
+        <thead>
+          <tr>
+            <th>What happened</th>
+            <th>Status</th>
+            <th>Message on iPad</th>
+            <th>What to do</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Cashout submitted successfully</td>
+            <td><span class="badge badge-synced">Synced</span></td>
+            <td><em>(blank)</em></td>
+            <td>Nothing.</br>Master Cashout Sheet updated.</td>
+          </tr>
+          <tr>
+            <td>WiFi down or no internet</td>
+            <td><span class="badge badge-pending">Pending</span></td>
+            <td><a href="#err-network-down">Network error, not submitted</a></td>
+            <td>Check WiFi, resubmit when connected</td>
+          </tr>
+          <tr>
+            <td>Apps Script deployment broken or quota exceeded</td>
+            <td><span class="badge badge-error">Error</span></td>
+            <td>Apps Script error (HTTP 500)</td>
+            <td>Contact Matt</td>
+          </tr>
+          <tr>
+            <td>Apps Script URL is wrong or expired</td>
+            <td><span class="badge badge-error">Error</span></td>
+            <td>Apps Script error (HTTP 404)</td>
+            <td>Contact Matt</td>
+          </tr>
+          <tr>
+            <td>Template tab was deleted from cashout master sheet</td>
+            <td><span class="badge badge-error">Error</span></td>
+            <td><a href="#err-template-missing">Template tab not found on cashout master sheet</a></td>
+            <td>Restore template from backup sheet (see steps below)</td>
+          </tr>
+          <tr>
+            <td>Staff used a REF# that's already on today's sheet</td>
+            <td><span class="badge badge-conflict">Conflict</span></td>
+            <td><a href="#err-ref-conflict">REF# X already exists on today's sheet</a></td>
+            <td>Check if typo or intentional, then correct and resubmit or overwrite</td>
+          </tr>
+          <tr>
+            <td>Section has no empty rows left</td>
+            <td><span class="badge badge-error">Error</span></td>
+            <td><a href="#err-section-full">X section is full, no empty rows</a></td>
+            <td>Check sheet for duplicate/stale rows, clean up, resubmit</td>
+          </tr>
+          <tr>
+            <td>Resubmit tried but no matching rows and no empty slots</td>
+            <td><span class="badge badge-error">Error</span></td>
+            <td><a href="#err-resubmit-not-found">REF# X not found in [section], use fresh Submit instead</a></td>
+            <td>Load into form, submit as fresh</td>
+          </tr>
+          <tr>
+            <td>Apps Script doesn't recognize the section name</td>
+            <td><span class="badge badge-error">Error</span></td>
+            <td><a href="#err-unknown-section">Unknown section "X", contact Matt</a></td>
+            <td>Screenshot it, contact Matt</td>
+          </tr>
+          <tr>
+            <td>Main sheet failed but backup sheet succeeded</td>
+            <td><span class="badge badge-partial">Partial</span></td>
+            <td><a href="#err-main-sync-failed">Main sheet sync failed, backup sheet OK</a></td>
+            <td>Check backup sheet, resubmit to retry main sheet</td>
+          </tr>
+          <tr>
+            <td>Backup sheet failed but main sheet succeeded</td>
+            <td><span class="badge badge-synced">Synced</span></td>
+            <td><a href="#err-backup-sync-failed">Backup sync failed (not urgent)</a></td>
+            <td>Main sheet has the data, tell Matt when convenient</td>
+          </tr>
+          <tr>
+            <td>Both syncs failed</td>
+            <td><span class="badge badge-pending">Pending</span></td>
+            <td><a href="#err-both-syncs-failed">Both syncs failed</a></td>
+            <td>Resubmit when network/Google is stable</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <hr>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- ERROR RUNBOOKS -->
+    <!-- ═══════════════════════════════════════════ -->
+    <h2>Error Messages & Solutions</h2>
+
+    <!-- Template tab -->
+    <div class="card">
+      <h3 id="err-template-missing" class="error-anchor">Error: "Template tab not found on cashout master sheet"</h3>
+      <p>Someone accidentally deleted or renamed the <code>&#9888;&#65039; TEMPLATE &mdash; DO NOT DELETE</code> tab in
+        the cashout master sheet (<code>DailyCashout-Master</code>). The app can't create today's tab without it.</p>
+      <div class="callout callout-safe">
+        <h4>What's safe:</h4> The cashout is stored on the iPad. Nothing is
+        lost.
+      </div>
+      <h3>How to fix</h3>
+      <ol class="steps">
+        <li>Open the <strong>Template Backup</strong> Google Sheet</li>
+        <li>Right-click the <code>Template</code> tab &rarr; <strong>Copy to</strong> &rarr; <strong>Existing
+            spreadsheet</strong></li>
+        <li>Choose the master cashout sheet (<code>DailyCashout-Master</code>)</li>
+        <li>Open the master cashout sheet, find the newly copied tab (usually called <code>Copy of Template</code>)</li>
+        <li>Rename it to exactly <code>&#9888;&#65039; TEMPLATE &mdash; DO NOT DELETE</code> (including the warning
+          symbol)</li>
+        <li>Right-click it &rarr; <strong>Protect sheet</strong> &rarr; "Only I can edit" &rarr; Save</li>
+        <li>Go to the iPad, open the <strong>Backups screen</strong>, find the cashout, tap <strong>Resubmit</strong>
+        </li>
+        <li>Verify the row appears in today's tab of the master sheet</li>
+      </ol>
+    </div>
+
+    <!-- Network / WiFi -->
+    <div class="card">
+      <h3 id="err-network-down" class="error-anchor">Error: "Network/WiFi down" or "Submission failed"</h3>
+      <p>The iPad couldn't reach Google. Either the restaurant's WiFi is down, Google is down, or the network is
+        unreliable.</p>
+      <div class="callout callout-safe">
+        <h4>What's safe:</h4> The cashout is stored on the iPad. Nothing is
+        lost.
+      </div>
+      <h3>How to fix</h3>
+      <ol class="steps">
+        <li>Check that the restaurant's WiFi is actually working (try loading any website on the iPad)</li>
+        <li>Once WiFi is back, open the iPad <strong>Backups screen</strong></li>
+        <li>Find the pending cashout(s) and tap <strong>Resubmit</strong> on each</li>
+        <li>Verify they appear in the master sheet</li>
+      </ol>
+      <div class="callout callout-info">
+        <h4>If WiFi stays broken for a while:</h4> Don't worry &mdash; the
+        cashouts stay on the iPad indefinitely. When the iPad finally gets back online, use Resubmit on each pending
+        entry.
+      </div>
+    </div>
+
+    <!-- Main sheet failed -->
+    <div class="card">
+      <h3 id="err-main-sync-failed" class="error-anchor">Error: "Main sheet sync failed" (backup sheet still worked)
+      </h3>
+      <p>The main Apps Script failed for some reason (quota, permissions, script error), but the backup Apps Script
+        succeeded.</p>
+      <div class="callout callout-safe">
+        <h4>What's safe:</h4> The cashout is stored on the iPad AND in the
+        Backup Sheet.
+      </div>
+      <h3>How to fix</h3>
+      <ol class="steps">
+        <li>Open the <strong>Backup Sheet</strong> (<code>[BackupLog]AllCashouts</code>) on your desktop to confirm the
+          row is there</li>
+        <li>Open the iPad <strong>Backups screen</strong></li>
+        <li>Find the cashout and tap <strong>Resubmit</strong> &mdash; this will retry the main Apps Script</li>
+        <li>If Resubmit still fails, contact Matt with: the Cashout ID shown on the iPad + the date/time + a screenshot
+          of any error in the Apps Script logs</li>
+      </ol>
+    </div>
+
+    <!-- Backup sheet failed -->
+    <div class="card">
+      <h3 id="err-backup-sync-failed" class="error-anchor">Error: "Backup sheet sync failed" (main sheet worked)</h3>
+      <p>The main Apps Script worked fine. The backup Apps Script failed. This is a lower-priority issue because the
+        main sheet has the data.</p>
+      <div class="callout callout-safe">
+        <h4>What's safe:</h4> The cashout is on the iPad AND in the main sheet.
+      </div>
+      <h3>How to fix</h3>
+      <ol class="steps">
+        <li>Verify the row is in the master sheet</li>
+        <li>No urgent action needed</li>
+        <li>At end of shift, let Matt know &mdash; we'll investigate the backup Apps Script next time we work together
+        </li>
+      </ol>
+    </div>
+
+    <!-- Both failed -->
+    <div class="card">
+      <h3 id="err-both-syncs-failed" class="error-anchor">Error: "Both sheet syncs failed"</h3>
+      <p>Both Apps Scripts failed. This is rare &mdash; usually means Google Apps Script is having a platform-wide
+        issue.</p>
+      <div class="callout callout-safe">
+        <h4>What's safe:</h4> The cashout is on the iPad. This is exactly what
+        Layer 3 is for.
+      </div>
+      <h3>How to fix</h3>
+      <ol class="steps">
+        <li>Check if Google is having a platform issue: <a href="https://www.google.com/appsstatus/dashboard/"
+            target="_blank">Google Workspace Status Dashboard</a></li>
+        <li>If Google is down, wait it out &mdash; do NOT manually type cashouts until Google is back</li>
+        <li>Once Google is back, open the iPad <strong>Backups screen</strong></li>
+        <li>Tap <strong>Resubmit</strong> on each pending cashout</li>
+        <li>Verify they all appear in the master sheet</li>
+      </ol>
+    </div>
+
+    <!-- REF# conflict -->
+    <div class="card">
+      <h3 id="err-ref-conflict" class="error-anchor">Error: "REF# X already exists on today's sheet"</h3>
+      <p>Staff tried to submit a cashout using a REF# that's already been used on today's sheet.</p>
+      <div class="callout callout-safe">
+        <h4>What's safe:</h4> The new cashout is stored on the iPad. Nothing was
+        written to the sheet.
+      </div>
+      <h3>How to figure out what happened</h3>
+      <ol class="steps">
+        <li>Open the master sheet and find today's tab</li>
+        <li>Look at the existing row for that ref# &mdash; does it have the right name(s)?</li>
+      </ol>
+
+      <div class="callout callout-info" style="margin-top:1rem;">
+        <h4>Case A: Staff typed the wrong ref# (most common)</h4>
+        Go to the iPad Backups screen, find the pending-conflict entry, tap <strong>View data</strong> to confirm the
+        details, have the staff correct the ref# and resubmit with the right number.
+      </div>
+      <div class="callout callout-warn" style="margin-top:0.5rem;">
+        <h4>Case B: The existing cashout genuinely needs to be updated</h4>
+        Confirm with staff they want to overwrite. On the Backups screen, find the pending-conflict entry and tap
+        <strong>Resubmit</strong>. This overwrites the existing rows and marks the ref# as <code>X (Resubmitted)</code>.
+        If the split shrank (e.g. 3 people to 2), extra rows are auto-cleared.
+      </div>
+    </div>
+
+    <!-- Section full -->
+    <div class="card">
+      <h3 id="err-section-full" class="error-anchor">Error: "[Section name] section is full, no empty rows"</h3>
+      <p>The named section in today's tab has no empty rows left. For example, PM Server Main has 16 slots (rows
+        21&ndash;36).</p>
+      <div class="callout callout-safe">
+        <h4>What's safe:</h4> The new cashout is stored on the iPad. Nothing was
+        written to the sheet.
+      </div>
+      <p style="font-size:0.9rem; color:var(--gray-500);"><strong>Is this likely to happen?</strong> Almost never.
+        Sandbar rarely has more than a handful of people in any single section per shift. If you're seeing this,
+        something unusual is going on.</p>
+      <h3>How to fix</h3>
+      <ol class="steps">
+        <li>Open today's tab in the cashout master sheet</li>
+        <li>Scroll to the named section and count the filled rows</li>
+        <li>Check for accidental duplicates, test data, or rows that don't belong to today</li>
+        <li>Delete any rows that shouldn't be there</li>
+        <li>Go to the iPad <strong>Backups screen</strong>, find the pending cashout, tap <strong>Resubmit</strong></li>
+        <li>If the section is genuinely full, contact Matt &mdash; the section layout may need to be expanded</li>
+      </ol>
+    </div>
+
+    <!-- Resubmit not found -->
+    <div class="card">
+      <h3 id="err-resubmit-not-found" class="error-anchor">Error: "REF# X not found in [Section name], use fresh Submit
+        instead"</h3>
+      <p>Someone tapped <strong>Resubmit</strong> but the Apps Script couldn't find any existing rows with that REF# in
+        the named section.</p>
+      <div class="callout callout-safe">
+        <h4>What's safe:</h4> The cashout is stored on the iPad. Nothing was
+        written to the sheet.
+      </div>
+
+      <div class="callout callout-info" style="margin-top:1rem;">
+        <h4>Case A: REF# is genuinely missing from the sheet</h4>
+        The original submit never landed. Use a <strong>fresh Submit</strong> instead of Resubmit: go to the Backups
+        screen, tap <strong>View data</strong>, then manually re-enter the cashout using the regular Submit button.
+      </div>
+      <div class="callout callout-warn" style="margin-top:0.5rem;">
+        <h4>Case B: REF# is in the sheet but the resubmit still failed</h4>
+        The REF# in the sheet was probably manually edited after the original submit (e.g. someone added
+        <code>(Manual fix)</code>). Undo the manual edit in the sheet if possible, then try Resubmit again.
+      </div>
+    </div>
+
+    <!-- Unknown section -->
+    <div class="card">
+      <h3 id="err-unknown-section" class="error-anchor">Error: "Unknown section '[section name]', contact Matt"</h3>
+      <p>The app tried to submit a cashout with a section name that the Apps Script doesn't recognize. This should never
+        happen in normal operation.</p>
+      <div class="callout callout-safe">
+        <h4>What's safe:</h4> The cashout is stored on the iPad. Nothing was
+        written to the sheet.
+      </div>
+      <h3>How to fix</h3>
+      <ol class="steps">
+        <li>Screenshot the error (including the exact section name in the message)</li>
+        <li>Note the Cashout ID from the error screen</li>
+        <li>Contact Matt &mdash; this is a code-level bug, not an operational issue</li>
+        <li>In the meantime: either enter the cashout manually in the master sheet, or wait for the fix</li>
+      </ol>
+    </div>
+
+    <hr>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- KNOWN LIMITATION -->
+    <!-- ═══════════════════════════════════════════ -->
+    <h2>Known Limitations</h2>
+
+    <div class="card">
+      <h3>Bar cashout resubmits may leave stale bartender entries</h3>
+      <p>Bar cashouts write the bartender name and hours to a second area at the bottom of the sheet. When a bar cashout
+        is resubmitted, the data rows are correctly overwritten, but the bottom bartender entries are NOT automatically
+        cleaned up. New entries get appended, which may leave stale ones from the original submit.</p>
+      <div class="callout callout-warn">
+        <h4>What to watch for:</h4> After resubmitting a bar cashout, scroll
+        down to the bottom bartender section of that day's tab. If you see duplicate bartender names (e.g. "Dana"
+        appearing twice), the older entry is stale.
+      </div>
+      <p><strong>How to fix:</strong> Manually delete the stale bartender name and hours from the bottom section. Do not
+        delete anything from the main data rows (those are handled correctly by the resubmit).</p>
+      <p style="font-size:0.9rem; color:var(--gray-500);">Why this isn't automated: The bartender section doesn't store
+        the REF# next to the name, so there's no reliable way for the Apps Script to tell which bartender entries
+        belonged to which cashout.</p>
+    </div>
+
+    <hr>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- ARCHIVE WORKFLOW -->
+    <!-- ═══════════════════════════════════════════ -->
+    <h2>Archive Workflow</h2>
+    <p>The master cashout sheet accumulates one tab per day forever. Every so often (end of month, end of quarter,
+      whenever it feels cluttered), archive the old tabs:</p>
+    <ol class="steps">
+      <li>Open the master cashout sheet in Google Drive</li>
+      <li>Right-click the file &rarr; <strong>Make a copy</strong></li>
+      <li>Rename the copy to something like <code>Sandbar Cashout &mdash; 2026-Q1 Archive</code></li>
+      <li>Move the copy to an archive folder if desired</li>
+      <li>Open the ORIGINAL master sheet</li>
+      <li>Delete the old dated tabs you just archived (leave the template tab and any current-period tabs alone)</li>
+    </ol>
+
+    <div class="callout callout-error" style="margin-top:1rem;">
+      <h4>Important</h4>
+      <ul style="margin:0.25rem 0 0 1.2rem; padding:0;">
+        <li>The app only cares about today's tab &mdash; old tab count doesn't matter</li>
+        <li>NEVER delete the <code>&#9888;&#65039; TEMPLATE &mdash; DO NOT DELETE</code> tab</li>
+        <li>NEVER rename the master sheet file in a way that changes its ID (moving or renaming the file itself is fine;
+          the script tracks it by ID)</li>
+      </ul>
+    </div>
+
+    <hr>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- BACKUPS SCREEN -->
+    <!-- ═══════════════════════════════════════════ -->
+    <h2>The iPad Backups Screen</h2>
+    <p>The Backups screen on the iPad is the safety net. Every cashout ever submitted from this iPad is stored there,
+      even ones that successfully made it to the sheet. Each entry shows:</p>
+
+    <div class="card">
+      <p><strong>Cashout ID</strong> &mdash; in the format <code>2026-04-11[REF42]</code></p>
+      <p><strong>Status</strong> &mdash; one of:</p>
+      <ul style="margin:0 0 0.75rem 1.2rem;">
+        <li><span class="badge badge-synced">Synced</span> &mdash; successfully sent to the sheet</li>
+        <li><span class="badge badge-pending">Pending</span> &mdash; not yet synced (usually a network or sync error)
+        </li>
+        <li><span class="badge badge-conflict">Pending-conflict</span> &mdash; ref# collision detected, requires your
+          review</li>
+      </ul>
+      <p><strong>Date, section, names, and final amounts</strong></p>
+      <p style="margin-bottom:0;"><strong>Three action buttons:</strong></p>
+      <ul style="margin:0.25rem 0 0 1.2rem;">
+        <li><strong>View data</strong> &mdash; expand to see everything stored for this cashout</li>
+        <li><strong>Resubmit</strong> &mdash; re-send the cashout to both sheets. Safe to tap multiple times.</li>
+        <li><strong>Mark as manually synced</strong> &mdash; if you typed the row into the sheet by hand, tap this to
+          clear the pending status</li>
+      </ul>
+    </div>
+
+    <hr>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- PRIVATE BROWSING WARNING -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="callout callout-error">
+      <h4>Important: Never Use Private Browsing</h4>
+      If Safari is in Private Browsing mode, localStorage is wiped when the tab closes. This means all backup data
+      stored on the iPad would be lost. The home screen shortcut avoids this by always opening in a normal Safari
+      session.<br><br>
+      <strong>Rule:</strong> Always use the home screen shortcut &mdash; never open the app URL directly in a private
+      Safari tab.
+    </div>
+
+    <hr>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- WHEN NOTHING HELPS -->
+    <!-- ═══════════════════════════════════════════ -->
+    <h2>When Nothing in This Doc Helps</h2>
+    <div class="card">
+      <ol class="steps">
+        <li>Don't delete anything on the iPad or in the master sheet</li>
+        <li>Screenshot any error messages</li>
+        <li>Note the Cashout ID(s) of affected cashouts</li>
+        <li>Contact Matt with all of the above</li>
+      </ol>
+      <p style="margin-top:0.75rem;"><strong>Matt's contact:</strong> <a
+          href="mailto:matt@veraisonlabs.com">matt@veraisonlabs.com</a></p>
+    </div>
+
+    <hr>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- CHANGE LOG -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="changelog">
+      <h2 style="font-size:1.1rem;">Change Log</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Added by</th>
+            <th>Change</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>2026-04-11</td>
+            <td>Matt + Claude</td>
+            <td>Initial scaffold during v3 build</td>
+          </tr>
+          <tr>
+            <td>2026-04-11</td>
+            <td>Matt + Claude</td>
+            <td>Added "bar cashout resubmit stale bartender entries" known limitation</td>
+          </tr>
+          <tr>
+            <td>2026-04-11</td>
+            <td>Matt + Claude</td>
+            <td>Error display rule: reassurance now at BOTTOM of message</td>
+          </tr>
+          <tr>
+            <td>2026-04-11</td>
+            <td>Matt + Claude</td>
+            <td>Error messages now name the specific artifact. Added SECTION_FULL, RESUBMIT_NOT_FOUND, UNKNOWN_SECTION
+              runbooks.</td>
+          </tr>
+          <tr>
+            <td>2026-04-11</td>
+            <td>Matt + Claude</td>
+            <td>Added full status/message quick reference table. Orphan rows auto-cleared. Approach A locked in (no-cors
+              removed).</td>
+          </tr>
+          <tr>
+            <td>2026-04-11</td>
+            <td>Matt + Claude</td>
+            <td>Added backup Apps Script. Append-only log to [BackupLog]AllCashouts sheet.</td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="margin-top:0.5rem; font-style:italic;">Add entries here as you make edits. Keep a paper trail.</p>
+    </div>
+
+  </main>
+
+  <footer>
+    Sandbar Cashout App &mdash; Troubleshooting Guide &mdash; Last updated April 2026
+  </footer>
+
+</body>
+
+</html>

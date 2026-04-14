@@ -6,14 +6,13 @@
 
 ## Quick orientation
 
-The Sandbar Cashout App has **four layers** that each kick in for a different failure mode. Most problems only break ONE layer — knowing which one is broken tells you which recovery path to follow.
+The Sandbar Cashout App has **three layers** that each kick in for a different failure mode. Most problems only break ONE layer — knowing which one is broken tells you which recovery path to follow.
 
 | Layer | What it is | When it saves you |
 |---|---|---|
 | **1 — Main Cashout Sheet** | The normal Google Sheet where cashouts land | Normal day |
 | **2 — Backup Sheet** | A separate Google Sheet with a raw copy of every submission | Main sheet corruption, formula errors |
 | **3 — iPad Local Storage** | Cashouts stored directly on the iPad itself | WiFi down, Google down, Apps Script broken |
-| **4 — Physical screenshot** | Photo of the iPad screen | Everything else failed at once |
 
 **The golden rule:** every error message in the app ENDS with `✓ Cashout data saved to iPad`. If you see that line at the bottom of the message, **nothing is lost.** The cashout is safe on the iPad — you just need to figure out why it didn't make it to the sheet.
 
