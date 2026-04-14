@@ -34,7 +34,7 @@ const LOCK_TIMEOUT_MS   = 5000;
 // The Apps Script throws stable short codes, NOT user-facing prose. The iPad's
 // JavaScript is responsible for translating each code into reassurance-first
 // display copy. Full recovery steps (including URLs like the Template backup
-// sheet) live in [CashApp]Troubleshooting.md — never in error messages sent
+// sheet) live in [CashApp]DevelopmentTroubleshooting.md — never in error messages sent
 // back to the client.
 //
 //   TEMPLATE_MISSING         — the Template tab was deleted from the master sheet
@@ -241,7 +241,7 @@ function writeRowsOverwrite(sheet, config, rows, existingRows) {
 
   // Bar cashout: bartender-name-rows are rewritten (may leave stale duplicates
   // from the original submit that the manager will need to clean up manually).
-  // Known limitation; documented in [CashApp]Troubleshooting.md.
+  // Known limitation; documented in [CashApp]DevelopmentTroubleshooting.md.
   var isBar = rows[0].section.includes('Bar');
   if (isBar && config.bartRows) {
     rows.forEach(function(row) {
