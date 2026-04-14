@@ -787,6 +787,35 @@
         date should have been &mdash; something only a manager can decide.</p>
     </div>
 
+    <div class="card">
+      <h3 id="err-wrong-reference-number">Wrong Reference Numbers &mdash; flagged duplicates (entered 3x)</h3>
+      <p>If a staff member on the iPad tries to submit a cashout with a REF# that's already been used on today's sheet,
+        the app shows them a warning with two options: edit the REF# to a fresh number, or &mdash; if they insist the
+        REF# is correct &mdash; re-enter it repeated three times so the duplicate is flagged for you.</p>
+      <div class="callout callout-warn">
+        <h4>What to watch for:</h4>
+        Unusual REF# values in column A of today's tab, such as <code>666</code>, <code>999</code>, or
+        <code>121212</code>. These are always the original REF# repeated three times (e.g. <code>6 &rarr; 666</code>,
+        <code>12 &rarr; 121212</code>). Any REF# that looks like a repeated-digit pattern well above the normal
+        cashout-number range is a flagged duplicate that staff submitted deliberately.
+      </div>
+      <p><strong>What's safe:</strong> Both the original cashout (e.g. REF# 6) and the flagged duplicate (REF# 666) are
+        saved separately. Nothing was overwritten. The manager just needs to decide which is the correct record.</p>
+      <p><strong>How to fix (manager decision):</strong></p>
+      <ol class="steps">
+        <li>Find the original cashout (e.g. REF# 6) and its flagged duplicate (REF# 666) on today's tab</li>
+        <li>Compare the rows &mdash; check names, sales figures, tip-outs, and dueback amounts</li>
+        <li>Talk to the staff involved to figure out which version is correct, or whether both should be kept
+          under different REF#s</li>
+        <li>Delete or edit whichever row shouldn't be the final record</li>
+        <li>If keeping the flagged duplicate as a legitimate cashout, rename its REF# (in column A) from
+          <code>666</code> back to whatever it should actually be</li>
+      </ol>
+      <p style="font-size:0.9rem; color:var(--gray-500);">Why the app can't auto-reconcile: deciding which of two
+        conflicting cashouts is correct requires human judgment about what happened during the shift. The app routes
+        this to the manager on purpose &mdash; the tripled REF# is the signal that your review is needed.</p>
+    </div>
+
     <hr>
 
     <!-- ═══════════════════════════════════════════ -->

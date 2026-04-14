@@ -555,7 +555,7 @@
     font-weight: 500;
   }
 
-  /* REF# conflict banner — persistent, dismissible */
+  /* REF# conflict banner — persistent, dismissible, two-option decision. */
   .ref-conflict-banner {
     position: relative;
     margin: 0 0 16px;
@@ -564,6 +564,7 @@
     border: 2px solid var(--red);
     border-radius: 8px;
     box-shadow: 0 4px 14px rgba(248, 81, 73, 0.18);
+    scroll-margin-top: 80px;  /* clears the sticky header when scrollIntoView is called on mobile */
   }
   .ref-conflict-title {
     font-family: 'Syne', sans-serif;
@@ -572,13 +573,7 @@
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--red);
-    margin: 0 32px 10px 0;
-  }
-  .ref-conflict-body {
-    font-size: 14px;
-    color: var(--text);
-    line-height: 1.5;
-    margin-bottom: 14px;
+    margin: 0 32px 14px 0;
   }
   .ref-conflict-close {
     position: absolute;
@@ -597,30 +592,46 @@
     font-family: inherit;
   }
   .ref-conflict-close:hover { background: rgba(248, 81, 73, 0.18); }
+  .ref-conflict-option-note {
+    font-size: 11px;
+    font-style: italic;
+    color: var(--muted);
+    text-align: center;
+    margin-top: 8px;
+    line-height: 1.4;
+  }
+  .ref-conflict-divider {
+    text-align: center;
+    font-size: 11px;
+    font-style: italic;
+    color: var(--muted);
+    margin: 12px 0;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
   .ref-conflict-btn {
-    background: var(--red);
-    color: #fff;
     border: none;
-    padding: 14px 20px;
+    padding: 12px 18px;
     border-radius: 6px;
     font-family: 'DM Mono', monospace;
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
     width: 100%;
-    transition: opacity 0.15s;
+    transition: all 0.15s;
   }
-  .ref-conflict-btn:hover { opacity: 0.9; }
+  .ref-conflict-btn-primary {
+    background: var(--red);
+    color: #fff;
+  }
+  .ref-conflict-btn-primary:hover { opacity: 0.9; }
+  .ref-conflict-btn-secondary {
+    background: transparent;
+    color: var(--red);
+    border: 1px solid var(--red);
+  }
+  .ref-conflict-btn-secondary:hover { background: rgba(248, 81, 73, 0.12); }
   .ref-conflict-btn:active { transform: scale(0.98); }
-  .ref-conflict-hint {
-    font-size: 12px;
-    color: var(--muted);
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px dashed rgba(248, 81, 73, 0.4);
-    line-height: 1.5;
-  }
-  .ref-conflict-hint strong { color: var(--text); }
 
   /* Backups screen */
   .backups-toggle {
@@ -896,11 +907,13 @@
   <div class="ref-conflict-banner" id="refConflictBanner" style="display:none;">
     <button class="ref-conflict-close" onclick="dismissRefConflict()" aria-label="Close">×</button>
     <div class="ref-conflict-title">REF# Already Used</div>
-    <div class="ref-conflict-body" id="refConflictMsg"></div>
-    <button class="ref-conflict-btn" onclick="dismissRefConflict()">OK, I'll change it</button>
-    <div class="ref-conflict-hint">
-      Need to overwrite the existing cashout instead? Use <strong>Edit to Resubmit</strong> from the Cashout Log.
-    </div>
+
+    <button class="ref-conflict-btn ref-conflict-btn-primary" onclick="editRefConflict()">Typed wrong REF#</button>
+
+    <div class="ref-conflict-divider">or</div>
+
+    <button class="ref-conflict-btn ref-conflict-btn-secondary" id="refConflictTripleBtn" onclick="submitTripledRef()">Enter as —</button>
+    <div class="ref-conflict-option-note">Repeating the REF# 3x flags it for the manager to reconcile</div>
   </div>
 
   <!-- CASHOUT INFO -->
@@ -1359,9 +1372,13 @@ function getNames() {
 
 // REF# conflict banner — persistent (doesn't auto-dismiss). Shown when a
 // fresh submit attempts a date+REF# that's already in the backup log.
+// Two escape paths: (1) edit the REF# to something fresh, (2) enter the
+// REF# repeated 3x as a visual flag so the manager reconciles downstream.
 function showRefConflict(refNum, date) {
-  const msgEl = document.getElementById('refConflictMsg');
-  msgEl.textContent = `REF# ${refNum} was already submitted on ${date}. Pick a different REF# and recalculate, or go to the Cashout Log and use "Edit to Resubmit" to overwrite the existing cashout.`;
+  const tripled = String(refNum) + String(refNum) + String(refNum);
+  const tripleBtn = document.getElementById('refConflictTripleBtn');
+  tripleBtn.textContent = 'Enter as ' + tripled;
+  tripleBtn.dataset.tripled = tripled;
   const banner = document.getElementById('refConflictBanner');
   banner.style.display = 'block';
   banner.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1370,10 +1387,27 @@ function showRefConflict(refNum, date) {
 
 function dismissRefConflict() {
   document.getElementById('refConflictBanner').style.display = 'none';
+  document.getElementById('refNum').classList.remove('error');
+}
+
+// "Typed wrong REF#" — close the banner and jump to the REF# field so the
+// staff can fix it without scrolling.
+function editRefConflict() {
+  dismissRefConflict();
   const refEl = document.getElementById('refNum');
-  refEl.classList.remove('error');
   refEl.focus();
   refEl.select?.();
+}
+
+// "Enter as XXX" — replace the REF# with its tripled version, dismiss the
+// banner, and re-run calculate. The new cashoutId won't collide, and the
+// tripled REF# will stand out in the manager's sheet for reconciliation.
+function submitTripledRef() {
+  const tripled = document.getElementById('refConflictTripleBtn').dataset.tripled;
+  if (!tripled) return;
+  document.getElementById('refNum').value = tripled;
+  dismissRefConflict();
+  calculate();
 }
 
 function showToast(msg, type = 'success') {
