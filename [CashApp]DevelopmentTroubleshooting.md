@@ -303,6 +303,37 @@ Matt's contact: `matt@veraisonlabs.com`
 
 ---
 
+### Per-row deep links from Cashout Log to troubleshooting sections
+
+**Idea:** Make each error message in the Cashout Log table a clickable link that jumps directly to its corresponding section in the troubleshooting guide. Tapping "REF# 42 already exists on today's sheet" on the iPad would open the troubleshooting page scrolled right to the REF# conflict walkthrough — one tap from "something went wrong" to "here is how to fix it."
+
+**Why consider this:**
+- Manager sees a specific error in the log, taps it, and lands on the exact instructions for that error instead of having to scan the full troubleshooting page.
+- Works especially well for the less-common errors (SECTION_FULL, UNKNOWN_SECTION) where the manager might not remember the fix.
+- The troubleshooting HTML already has named anchors for every error code (`#err-template-missing`, `#err-ref-conflict`, `#err-section-full`, `#err-resubmit-not-found`, `#err-unknown-section`, `#err-network-down`, `#err-main-sync-failed`, `#err-backup-sync-failed`, `#err-both-syncs-failed`). The hard part is done.
+
+**Implementation sketch (~15 lines in index.html):**
+1. Add a dictionary mapping error codes to anchor IDs:
+   ```
+   const ERROR_ANCHORS = {
+     TEMPLATE_MISSING: 'err-template-missing',
+     REF_CONFLICT:     'err-ref-conflict',
+     SECTION_FULL:     'err-section-full',
+     // ...
+   };
+   ```
+2. In `renderBackupsTable()`, when rendering the Message column, check if the error has a known anchor and wrap the message text in an `<a href="https://veraisonlabs.github.io/cashapp-SBV3/CashApp-Troubleshooting.html#err-...">` tag with `target="_blank"`.
+3. Non-error entries (Synced, no message) stay plain text.
+4. Style the link minimally to indicate clickability without overwhelming the table row (dashed underline, matches the troubleshooting doc's own link style).
+
+**Trade-offs:**
+- Requires keeping the anchor IDs in the troubleshooting doc in sync with the mapping in index.html. If an anchor is renamed, the corresponding app link breaks silently. Low risk since anchors are not renamed often.
+- Adds 15-ish lines to index.html, violating the "keep simple" constraint slightly. But the feature is strictly additive and cannot break the submit flow or any other existing functionality.
+
+**Status:** Not implemented as of 2026-04-14. Anchors exist in the troubleshooting doc (added during the live-page work on the same date). Pick this up whenever the "View Troubleshooting Guide" button has been in use long enough to know whether per-row deep linking is worth the extra code.
+
+---
+
 ## Change log for this doc
 
 | Date | Added by | Change |
