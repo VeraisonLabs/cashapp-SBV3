@@ -555,6 +555,73 @@
     font-weight: 500;
   }
 
+  /* REF# conflict banner — persistent, dismissible */
+  .ref-conflict-banner {
+    position: relative;
+    margin: 0 0 16px;
+    padding: 20px 24px 16px;
+    background: rgba(248, 81, 73, 0.12);
+    border: 2px solid var(--red);
+    border-radius: 8px;
+    box-shadow: 0 4px 14px rgba(248, 81, 73, 0.18);
+  }
+  .ref-conflict-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--red);
+    margin: 0 32px 10px 0;
+  }
+  .ref-conflict-body {
+    font-size: 14px;
+    color: var(--text);
+    line-height: 1.5;
+    margin-bottom: 14px;
+  }
+  .ref-conflict-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    border: none;
+    color: var(--red);
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+    border-radius: 4px;
+    font-family: inherit;
+  }
+  .ref-conflict-close:hover { background: rgba(248, 81, 73, 0.18); }
+  .ref-conflict-btn {
+    background: var(--red);
+    color: #fff;
+    border: none;
+    padding: 14px 20px;
+    border-radius: 6px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    width: 100%;
+    transition: opacity 0.15s;
+  }
+  .ref-conflict-btn:hover { opacity: 0.9; }
+  .ref-conflict-btn:active { transform: scale(0.98); }
+  .ref-conflict-hint {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed rgba(248, 81, 73, 0.4);
+    line-height: 1.5;
+  }
+  .ref-conflict-hint strong { color: var(--text); }
+
   /* Backups screen */
   .backups-toggle {
     background: var(--surface2);
@@ -823,6 +890,18 @@
 </header>
 
 <div class="container">
+
+  <!-- REF# conflict banner — persistent until dismissed. Shown when calculate()
+       detects a duplicate cashoutId (date+REF#) in localStorage. -->
+  <div class="ref-conflict-banner" id="refConflictBanner" style="display:none;">
+    <button class="ref-conflict-close" onclick="dismissRefConflict()" aria-label="Close">×</button>
+    <div class="ref-conflict-title">REF# Already Used</div>
+    <div class="ref-conflict-body" id="refConflictMsg"></div>
+    <button class="ref-conflict-btn" onclick="dismissRefConflict()">OK, I'll change it</button>
+    <div class="ref-conflict-hint">
+      Need to overwrite the existing cashout instead? Use <strong>Edit to Resubmit</strong> from the Cashout Log.
+    </div>
+  </div>
 
   <!-- CASHOUT INFO -->
   <div class="section-label">Cashout Info</div>
@@ -1278,6 +1357,25 @@ function getNames() {
     .split(',').map(n => n.trim()).filter(n => n.length > 0);
 }
 
+// REF# conflict banner — persistent (doesn't auto-dismiss). Shown when a
+// fresh submit attempts a date+REF# that's already in the backup log.
+function showRefConflict(refNum, date) {
+  const msgEl = document.getElementById('refConflictMsg');
+  msgEl.textContent = `REF# ${refNum} was already submitted on ${date}. Pick a different REF# and recalculate, or go to the Cashout Log and use "Edit to Resubmit" to overwrite the existing cashout.`;
+  const banner = document.getElementById('refConflictBanner');
+  banner.style.display = 'block';
+  banner.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.getElementById('refNum').classList.add('error');
+}
+
+function dismissRefConflict() {
+  document.getElementById('refConflictBanner').style.display = 'none';
+  const refEl = document.getElementById('refNum');
+  refEl.classList.remove('error');
+  refEl.focus();
+  refEl.select?.();
+}
+
 function showToast(msg, type = 'success') {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -1448,8 +1546,7 @@ function calculate() {
     const cashoutId = cashoutDate + '[REF' + refNum + ']';
     const existing = getBackups().find(b => b.cashoutId === cashoutId);
     if (existing) {
-      document.getElementById('refNum').classList.add('error');
-      showToast('REF# ' + refNum + ' already used on this date — use a different number or Edit to Resubmit from the Cashout Log', 'error');
+      showRefConflict(refNum, cashoutDate);
       return;
     }
   }
@@ -1857,6 +1954,7 @@ function resetForm() {
   // Clear submit banners
   document.getElementById('errorBanner').style.display = 'none';
   document.getElementById('successBanner').style.display = 'none';
+  document.getElementById('refConflictBanner').style.display = 'none';
 
   ['cashoutDate','refNum','names','totalSales','netCash','foodSales','beoSales','sushiNames']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
