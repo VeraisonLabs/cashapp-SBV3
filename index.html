@@ -600,6 +600,15 @@
   .backups-table tr:last-child td { border-bottom: none; }
   .backups-table tr { cursor: pointer; transition: background 0.1s; }
   .backups-table tbody tr:hover { background: var(--surface2); }
+  .backups-table tbody tr.older-copy td { color: var(--muted); opacity: 0.55; }
+  .backups-table tbody tr.older-copy td .status-badge { opacity: 0.7; }
+  .older-copy-label {
+    font-size: 9px;
+    font-style: italic;
+    color: var(--muted);
+    margin-left: 4px;
+    letter-spacing: 0.02em;
+  }
 
   .status-badge {
     display: inline-block;
@@ -640,6 +649,11 @@
     color: #000;
     border-color: var(--accent);
     font-weight: 500;
+  }
+  .backup-action-btn.resubmit.older-copy {
+    background: transparent;
+    color: var(--accent);
+    border: 1px dashed var(--accent);
   }
   .backup-action-btn.mark-synced {
     background: var(--surface2);
@@ -983,6 +997,15 @@
 const SCRIPT_URL        = 'https://script.google.com/macros/s/AKfycbxb3SPKNXDvhc6UiAl2DDmRq0qM6zv-y2o60ckH15QXThCVB7fpyGU8oCNfzBgtrcX_/exec';
 const BACKUP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxoV4V88bHDrnzQbq8QV83ukzVeZfPXmcxLjUMXW2380X-YA_9YxPgH3nr41Dp5VEbU/exec';
 const BACKUP_STORAGE_KEY = 'sb_cashout_backups';
+
+// Desktop browsers (Chrome/Edge) show a "Prevent this page from showing more dialogs"
+// checkbox on the 2nd native dialog onward. If checked, it silently blocks every future
+// prompt/confirm — including the access-code gate. iPad/mobile Safari don't render the
+// checkbox, so this warning only gets prepended on desktop.
+const IS_DESKTOP = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+const DESKTOP_DIALOG_WARNING = IS_DESKTOP
+  ? '⚠️ Do NOT check "Prevent this page from showing more dialogs" — it will block access to this feature.\n\n'
+  : '';
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
 let netCashNegative  = true;   // true = "−" (dueback mode), false = "+" (owes house)
@@ -1921,6 +1944,7 @@ function recalcFromTipouts() {
 
 // ── BACKUPS SCREEN ───────────────────────────────────────────────────────────
 let selectedBackupId = null;
+let selectedBackupIndex = null;  // specific array index, so "older copy" rows select themselves, not the newest with the same id
 
 const LOG_ACCESS_CODE = '1234';  // Change this to whatever you want
 
@@ -1930,7 +1954,7 @@ function toggleBackupsScreen() {
 
   // Only ask for code when opening the log, not when closing it
   if (!isShowing) {
-    const code = prompt('Enter access code:');
+    const code = prompt(DESKTOP_DIALOG_WARNING + 'Enter access code:');
     if (code !== LOG_ACCESS_CODE) {
       if (code !== null) showToast('Incorrect code', 'error');
       return;
@@ -1955,6 +1979,7 @@ function toggleBackupsScreen() {
   }
   document.getElementById('backupDetail').style.display = 'none';
   selectedBackupId = null;
+  selectedBackupIndex = null;
 }
 
 function renderBackupsTable() {
@@ -1973,12 +1998,19 @@ function renderBackupsTable() {
   const hasPending = backups.some(b => b.mainStatus === 'pending' || b.mainStatus === 'error');
   document.getElementById('backupsToggle').classList.toggle('has-pending', hasPending);
 
+  // Track which cashoutIds we've already seen. Backups are newest-first, so the
+  // first time we encounter a given cashoutId is the newest attempt; any later
+  // occurrence of the same id is an older copy of the same cashout.
+  const seenIds = new Set();
+
   tbody.innerHTML = backups.map((b, idx) => {
     const display = getDisplayStatus(b);
     const statusClass = display.status.toLowerCase();
     const names = b.formInputs?.names || b.rows?.map(r => r.name).join(', ') || '';
     const section = b.formInputs?.section || b.rows?.[0]?.section || '';
     const sharedBy = b.rows?.length || 1;
+    const isOlderCopy = seenIds.has(b.cashoutId);
+    seenIds.add(b.cashoutId);
 
     // Get a display amount
     let amount = '';
@@ -1990,8 +2022,14 @@ function renderBackupsTable() {
         : fmt(b.calcResult.finalAmount);
     }
 
-    return `<tr onclick="selectBackupRow('${b.cashoutId}')" class="${selectedBackupId === b.cashoutId ? 'selected' : ''}">
-      <td style="white-space:nowrap;font-size:10px;">${b.cashoutId}</td>
+    const rowClasses = [
+      selectedBackupIndex === idx ? 'selected' : '',
+      isOlderCopy ? 'older-copy' : '',
+    ].filter(Boolean).join(' ');
+    const olderLabel = isOlderCopy ? `<span class="older-copy-label">older copy</span>` : '';
+
+    return `<tr onclick="selectBackupRow('${b.cashoutId}', ${idx})" class="${rowClasses}">
+      <td style="white-space:nowrap;font-size:10px;">${b.cashoutId}${olderLabel}</td>
       <td><span class="status-badge ${statusClass}">${display.status}</span></td>
       <td class="msg-cell">${display.message.replace(/^Unexpected error:\s*/i, '')}</td>
       <td>${names}</td>
@@ -2002,37 +2040,52 @@ function renderBackupsTable() {
   }).join('');
 }
 
-function selectBackupRow(cashoutId) {
+function selectBackupRow(cashoutId, idx) {
   selectedBackupId = cashoutId;
+  selectedBackupIndex = idx;
   const detail = document.getElementById('backupDetail');
   detail.style.display = 'block';
-  document.getElementById('backupDetailLabel').textContent = cashoutId;
 
-  // Update button states based on entry status
   const backups = getBackups();
-  const entry = backups.find(b => b.cashoutId === cashoutId);
+  const entry = backups[idx];
+  const isOlderCopy = backups.findIndex(b => b.cashoutId === cashoutId) !== idx;
+  document.getElementById('backupDetailLabel').textContent = cashoutId + (isOlderCopy ? ' (older copy)' : '');
+
   if (entry) {
     const display = getDisplayStatus(entry);
     const resubBtn = document.getElementById('backupResubmitBtn');
     const syncBtn = document.getElementById('backupMarkSyncedBtn');
-    if (display.status === 'Synced') {
-      resubBtn.style.display = 'none';
-      syncBtn.style.display = 'none';
-    } else {
-      resubBtn.style.display = '';
-      syncBtn.style.display = '';
-    }
+    // Load into Form: always available so managers can reload any cashout
+    resubBtn.style.display = '';
+    // Relabel + re-color when loading an older copy — makes it harder to trigger by accident
+    resubBtn.textContent = isOlderCopy ? 'Load Older Copy into Form' : 'Load into Form';
+    resubBtn.classList.toggle('older-copy', isOlderCopy);
+    // Mark as Synced: hidden if already synced (action has no meaning)
+    syncBtn.style.display = display.status === 'Synced' ? 'none' : '';
   }
   renderBackupsTable();  // re-render to highlight selected row
 }
 
 function resubmitFromBackup() {
-  if (!selectedBackupId) return;
+  if (selectedBackupIndex === null) return;
   const backups = getBackups();
-  const entry = backups.find(b => b.cashoutId === selectedBackupId);
+  const entry = backups[selectedBackupIndex];
   if (!entry || !entry.formInputs) {
     showToast('No form data stored for this entry', 'error');
     return;
+  }
+
+  // Guard: if this is an older copy (a newer attempt for the same cashoutId exists),
+  // require explicit confirmation so a manager can't resubmit a stale version by mistake.
+  const isOlderCopy = backups.findIndex(b => b.cashoutId === entry.cashoutId) !== selectedBackupIndex;
+  if (isOlderCopy) {
+    const ok = confirm(
+      DESKTOP_DIALOG_WARNING +
+      'This is an OLDER copy of ' + entry.cashoutId + '.\n\n' +
+      'A newer attempt for the same cashout exists. Loading this one will overwrite the newer attempt when submitted.\n\n' +
+      'Continue anyway?'
+    );
+    if (!ok) return;
   }
 
   // Switch back to calculator view
@@ -2098,10 +2151,10 @@ function loadFromBackup(entry) {
 }
 
 function markAsSynced() {
-  if (!selectedBackupId) return;
-  if (!confirm('Mark ' + selectedBackupId + ' as manually synced? Only do this if you already entered it into the sheet by hand.')) return;
+  if (selectedBackupIndex === null) return;
+  if (!confirm(DESKTOP_DIALOG_WARNING + 'Mark ' + selectedBackupId + ' as manually synced? Only do this if you already entered it into the sheet by hand.')) return;
   const backups = getBackups();
-  const entry = backups.find(b => b.cashoutId === selectedBackupId);
+  const entry = backups[selectedBackupIndex];
   if (entry) {
     entry.mainStatus = 'manual';
     entry.mainMessage = 'Manually synced';
@@ -2109,6 +2162,7 @@ function markAsSynced() {
     saveBackups(backups);
   }
   selectedBackupId = null;
+  selectedBackupIndex = null;
   document.getElementById('backupDetail').style.display = 'none';
   renderBackupsTable();
   showToast('Marked as synced', 'success');
