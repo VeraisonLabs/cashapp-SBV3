@@ -661,6 +661,39 @@
   }
   .backup-action-btn:hover { opacity: 0.88; }
 
+  /* Quick-view read-only data panel inside backupDetail */
+  .backup-quickview {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 12px;
+    margin: 8px 0 0;
+  }
+  .qv-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 3px 0;
+  }
+  .qv-label { color: var(--muted); }
+  .qv-value {
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    text-align: right;
+    word-break: break-word;
+  }
+  .qv-section-header {
+    font-family: 'Syne', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 10px 0 4px;
+  }
+  .qv-divider { height: 1px; background: var(--border); margin: 8px 0; }
+
   /* Reset button */
   .reset-btn {
     width: 100%;
@@ -972,6 +1005,7 @@
     <!-- Detail / action area (shown when a row is tapped) -->
     <div id="backupDetail" style="display:none;">
       <div class="section-label" id="backupDetailLabel">—</div>
+      <div class="backup-quickview" id="backupQuickView"></div>
       <div class="backup-actions">
         <button class="backup-action-btn resubmit" id="backupResubmitBtn" onclick="resubmitFromBackup()">Load into Form</button>
         <button class="backup-action-btn mark-synced" id="backupMarkSyncedBtn" onclick="markAsSynced()">Mark as Synced</button>
@@ -2051,8 +2085,79 @@ function selectBackupRow(cashoutId, idx) {
     resubBtn.classList.toggle('older-copy', isOlderCopy);
     // Mark as Synced: hidden if already synced (action has no meaning)
     syncBtn.style.display = display.status === 'Synced' ? 'none' : '';
+    renderBackupQuickView(entry);
   }
   renderBackupsTable();  // re-render to highlight selected row
+}
+
+function renderBackupQuickView(entry) {
+  const container = document.getElementById('backupQuickView');
+  if (!container) return;
+  const fi = entry.formInputs || {};
+  const cr = entry.calcResult || {};
+  const rows = entry.rows || [];
+  const display = getDisplayStatus(entry);
+
+  const money = v => {
+    const n = Number(v);
+    if (isNaN(n)) return v || '';
+    return (n < 0 ? '-$' : '$') + Math.abs(n).toFixed(2);
+  };
+  const row = (label, value) =>
+    value === undefined || value === null || value === '' ? '' :
+    `<div class="qv-row"><span class="qv-label">${label}</span><span class="qv-value">${value}</span></div>`;
+
+  const parts = [];
+  parts.push(row('Submitted', entry.timestamp));
+  parts.push(row('Status', display.status + (display.message ? ' — ' + display.message : '')));
+  parts.push('<div class="qv-divider"></div>');
+  parts.push(row('Section', fi.section));
+  parts.push(row('Date', fi.cashoutDate));
+  parts.push(row('REF#', fi.refNum));
+  parts.push(row('Names', fi.names));
+  parts.push(row('Sushi Names', fi.sushiNames));
+  parts.push('<div class="qv-divider"></div>');
+  parts.push(row('Total Sales', fi.totalSales ? '$' + fi.totalSales : ''));
+  parts.push(row('Food Sales', fi.foodSales ? '$' + fi.foodSales : ''));
+  parts.push(row('S-Food Tip Pool', fi.sFoodTipPool ? '$' + fi.sFoodTipPool : ''));
+  parts.push(row('BEO Subtotal', fi.beoSales ? '$' + fi.beoSales : ''));
+  if (fi.netCash) {
+    const sign = fi.netCashNegative === false ? '+' : '−';
+    parts.push(row('Net Cash', sign + '$' + fi.netCash));
+  }
+
+  // Tip-outs (skip for sushi since it doesn't use the standard tip-out structure)
+  if (!cr.isSushiType && (cr.house || cr.busser || cr.bar || cr.expo || cr.events)) {
+    parts.push('<div class="qv-section-header">Tip-outs</div>');
+    parts.push(row('House', cr.house !== undefined ? money(cr.house) : ''));
+    parts.push(row('Busser', cr.busser !== undefined ? money(cr.busser) : ''));
+    parts.push(row('Bar', cr.bar !== undefined ? money(cr.bar) : ''));
+    parts.push(row('Expo', cr.expo !== undefined ? money(cr.expo) : ''));
+    parts.push(row('Events', cr.events !== undefined ? money(cr.events) : ''));
+  }
+
+  // Per-person
+  if (rows.length > 0) {
+    parts.push('<div class="qv-section-header">Per-person</div>');
+    rows.forEach(r => {
+      const hoursStr = r.hours ? ` · ${r.hours}h` : '';
+      const pctStr = r.sharePct !== undefined ? ` (${r.sharePct}%)` : '';
+      const teamStr = r.team ? ` [${r.team}]` : '';
+      let amt = '';
+      if (r.dueback) amt = 'Dueback ' + money(-r.dueback);
+      else if (r.owesHouse) amt = 'Owes ' + money(r.owesHouse);
+      else if (r.amount !== undefined) amt = money(r.amount);
+      parts.push(row(`${r.name || '—'}${teamStr}${pctStr}${hoursStr}`, amt));
+    });
+  }
+
+  // Sushi total
+  if (cr.isSushiType && cr.totalTips !== undefined) {
+    parts.push('<div class="qv-divider"></div>');
+    parts.push(row('Total Tips (50/50)', money(cr.totalTips)));
+  }
+
+  container.innerHTML = parts.filter(Boolean).join('');
 }
 
 function resubmitFromBackup() {
