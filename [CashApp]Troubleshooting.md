@@ -275,6 +275,34 @@ Matt's contact: `matt@veraisonlabs.com`
 
 ---
 
+## Potential future improvements
+
+### URL-based manager mode (deep link to Cashout Log)
+
+**Idea:** Replace any "Cashout Log access code" gate with a URL-based soft gate. Two iPad home-screen shortcuts on the same device:
+
+- **Staff shortcut** → `https://veraisonlabs.github.io/cashapp-SBV3/` → opens the calculator. Cashout Log button hidden.
+- **Manager shortcut** → `https://veraisonlabs.github.io/cashapp-SBV3/?log` → opens directly to the Cashout Log view. No calculator screen, no button to tap.
+
+**Why consider this:**
+- Native `prompt()` / `confirm()` dialogs are suppressed by Chrome under certain conditions (the "Prevent this page from showing more dialogs" checkbox, and the "page is not the active tab of the front window" check). Both have bitten this app. A URL-based gate uses no dialogs at all and cannot be suppressed.
+- Both shortcuts read the same `localStorage` because localStorage is scoped by origin (protocol + host), not by URL path or query string. Manager sees the same cashout history the staff iPad has been storing.
+- The URL itself is the "key." Staff don't bookmark it, managers do. Soft-gate with zero UI.
+
+**Implementation sketch (~10 lines):**
+1. On page load, read `new URLSearchParams(location.search).has('log')`.
+2. If true: hide the calculator screen, show the backups screen, skip any prompt.
+3. If false: hide the Cashout Log button entirely (staff never see it).
+4. Remove the `LOG_ACCESS_CODE` and the native `prompt()` gate.
+
+**Trade-offs:**
+- URL is shareable — anyone with the URL is "a manager." That's fine for soft-gating a restaurant workflow where the threat model is "staff might tap something out of curiosity."
+- Requires manager to set up a second iPad home-screen shortcut one time. Standard iOS Safari flow (Share → Add to Home Screen on the `?log` URL).
+
+**Status:** Not implemented as of 2026-04-14. The access-code `prompt()` gate was removed in the same session because of the Chrome dialog suppression issues, leaving the Cashout Log with no gate at all. If/when a soft gate is wanted back, this URL pattern is the path of least resistance.
+
+---
+
 ## Change log for this doc
 
 | Date | Added by | Change |

@@ -1946,20 +1946,9 @@ function recalcFromTipouts() {
 let selectedBackupId = null;
 let selectedBackupIndex = null;  // specific array index, so "older copy" rows select themselves, not the newest with the same id
 
-const LOG_ACCESS_CODE = '1234';  // Change this to whatever you want
-
 function toggleBackupsScreen() {
   const screen = document.getElementById('backupsScreen');
   const isShowing = screen.style.display === 'block';
-
-  // Only ask for code when opening the log, not when closing it
-  if (!isShowing) {
-    const code = prompt(DESKTOP_DIALOG_WARNING + 'Enter access code:');
-    if (code !== LOG_ACCESS_CODE) {
-      if (code !== null) showToast('Incorrect code', 'error');
-      return;
-    }
-  }
 
   if (isShowing) {
     // Hide backups, show main form
