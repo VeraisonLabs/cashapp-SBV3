@@ -2,16 +2,48 @@
 // Append-only raw log of every cashout submission. Completely independent from
 // the main Apps Script — no shared code, no shared sheet, no shared state.
 //
-// Design: maximally boring on purpose. One sheet, one row per submission,
-// append forever. No date tabs, no template cloning, no section mapping, no
-// row-slot logic. If the main Apps Script breaks for any reason, this one
-// keeps logging because it has none of the same moving parts.
+// Design: maximally boring on purpose. One sheet, append forever.
+// No date tabs, no template cloning, no row-slot logic. If the main Apps
+// Script breaks for any reason, this one keeps logging because it has none
+// of the same moving parts.
+//
+// Row granularity: ONE ROW PER PERSON (not per cashout). A 3-way split
+// produces 3 rows sharing the same Cashout ID. This matches the iPad's
+// N-rows-per-split payload shape and enables direct copy/paste from this
+// backup's master-mirror columns (C-J) into the master sheet's A-H.
+//
+// COLUMN LAYOUT (15 columns — header row must match):
+//   A: Cashout ID        (2026-04-11[REF42])
+//   B: Names             (comma-separated summary of everyone in the split)
+//   C: REFERENCE #       ← master sheet column A
+//   D: NAME              ← master sheet column B
+//   E: DUEBACK           ← master sheet column C
+//   F: HOUSE             ← master sheet column D
+//   G: BUSSER            ← master sheet column E
+//   H: BAR               ← master sheet column F  (blank for bar cashouts)
+//   I: EXPO              ← master sheet column G
+//   J: EVENTS            ← master sheet column H
+//   K: Received At
+//   L: Cashout Type
+//   M: Shared By
+//   N: Submit Type       (NEW or RESUBMIT)
+//   O: Raw Data          (full JSON of entire submission)
+//
+// To copy a cashout to the master sheet manually: select C:J for the rows
+// you want, paste into A:H of the master sheet's daily tab.
+//
+// For sushi cashouts, columns C-J are blank because the master doesn't
+// write per-person master-row data for sushi. Full data is in column O.
 //
 // SETUP:
 //   1. Set BACKUP_SHEET_ID to the [BackupLog]AllCashouts spreadsheet ID.
-//   2. Deploy as a SEPARATE Web App (Execute as: Me, Who has access: Anyone).
+//   2. Paste the header row into row 1 of the sheet:
+//      Cashout ID | Names | REFERENCE # | NAME | DUEBACK | HOUSE | BUSSER |
+//      BAR | EXPO | EVENTS | Received At | Cashout Type | Shared By |
+//      Submit Type | Raw Data
+//   3. Deploy as a SEPARATE Web App (Execute as: Me, Who has access: Anyone).
 //      This must be a different deployment from the main Apps Script.
-//   3. Paste the Web App URL into the HTML file's BACKUP_SCRIPT_URL constant.
+//   4. Paste the Web App URL into the HTML file's BACKUP_SCRIPT_URL constant.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const BACKUP_SHEET_ID = '1AIsfen18Tzbvhrhd4pPsCLnZXi_-iGgNAN297chb7g4';
@@ -37,18 +69,80 @@ function doPost(e) {
     // Build the Cashout ID (matches the format used in the iPad Backups screen)
     // Format: YYYY-MM-DD[REF{nn}] — date first for scanning, REF# in brackets
     var cashoutId = cashoutDate + '[REF' + refNum + ']';
+    var rawJson = JSON.stringify(data);
+    var isSushi = (section === 'PM Sushi');
+    var submitType = isResubmit ? 'RESUBMIT' : 'NEW';
 
-    // Append one row per submission (not per person)
-    // Columns: Cashout ID | Received At | Cashout Type | Shared By | Names | Submit Type | Raw Data
-    sheet.appendRow([
-      cashoutId,                           // A — Cashout ID (2026-04-11[REF42])
-      receivedAt,                          // B — When the backup script received it
-      section,                             // C — Cashout type (e.g. PM Server Main)
-      rows.length,                         // D — Shared by (number of people)
-      names,                               // E — All names (comma-separated)
-      isResubmit ? 'RESUBMIT' : 'NEW',    // F — Submit type
-      JSON.stringify(data),                // G — Full raw JSON payload
-    ]);
+    // Append one row PER PERSON (N rows per split, 1 row for solos).
+    // Columns C-J mirror the master sheet's A-H layout exactly, so the manager
+    // can select those cells and paste them directly into the master sheet if
+    // they ever need to copy a cashout by hand.
+    //
+    // Layout (15 columns):
+    //   A: Cashout ID
+    //   B: Names (summary — comma-separated for splits, single name for solos)
+    //   C: REFERENCE #     <-- master sheet column A
+    //   D: NAME            <-- master sheet column B
+    //   E: DUEBACK         <-- master sheet column C
+    //   F: HOUSE           <-- master sheet column D
+    //   G: BUSSER          <-- master sheet column E
+    //   H: BAR             <-- master sheet column F  (blank for bar cashouts, matching the main script)
+    //   I: EXPO            <-- master sheet column G
+    //   J: EVENTS          <-- master sheet column H
+    //   K: Received At
+    //   L: Cashout Type
+    //   M: Shared By
+    //   N: Submit Type
+    //   O: Raw Data (full JSON of entire submission — same in every row of a split)
+    //
+    // For sushi cashouts, columns C-J are left BLANK because the master sheet
+    // doesn't write per-person master-row data for sushi (only totalTips to B51).
+    // The full sushi data remains recoverable from column O (Raw Data).
+    rows.forEach(function(row) {
+      if (isSushi) {
+        sheet.appendRow([
+          cashoutId,          // A
+          names,              // B
+          '',                 // C — REFERENCE # (blank for sushi)
+          '',                 // D — NAME (blank for sushi)
+          '',                 // E — DUEBACK (blank for sushi)
+          '',                 // F — HOUSE (blank for sushi)
+          '',                 // G — BUSSER (blank for sushi)
+          '',                 // H — BAR (blank for sushi)
+          '',                 // I — EXPO (blank for sushi)
+          '',                 // J — EVENTS (blank for sushi)
+          receivedAt,         // K
+          section,            // L
+          rows.length,        // M
+          submitType,         // N
+          rawJson,            // O
+        ]);
+      } else {
+        // Server / Bar: compute the master-sheet values using the same conventions
+        // as the main Apps Script (dueback sign convention, BAR blank for bar cashouts).
+        var duebackValue = (row.owesHouse > 0) ? row.owesHouse : -(row.dueback || 0);
+        var isBar = section.indexOf('Bar') !== -1;
+        var barValue = isBar ? '' : (row.bar || 0);
+
+        sheet.appendRow([
+          cashoutId,          // A
+          names,              // B
+          row.refNum || '',   // C — REFERENCE #
+          row.name || '',     // D — NAME
+          duebackValue,       // E — DUEBACK
+          row.house || 0,     // F — HOUSE
+          row.busser || 0,    // G — BUSSER
+          barValue,           // H — BAR
+          row.expo || 0,      // I — EXPO
+          row.events || 0,    // J — EVENTS
+          receivedAt,         // K
+          section,            // L
+          rows.length,        // M
+          submitType,         // N
+          rawJson,            // O
+        ]);
+      }
+    });
 
     return ContentService
       .createTextOutput(JSON.stringify({
