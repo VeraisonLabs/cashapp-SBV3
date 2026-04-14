@@ -1438,6 +1438,22 @@ function calculate() {
   if (!names.length)    { document.getElementById('names').classList.add('error');       valid = false; }
   if (!valid) { showToast('Please fill in all required fields', 'error'); return; }
 
+  // REF# conflict check (client-side, localStorage). Blocks the same
+  // date+REF# combo from being used twice on this iPad. Skipped during
+  // resubmit — the entry loaded from the log is EXPECTED to share an id
+  // with its backup record. For managers who legitimately need to
+  // overwrite an existing cashout, the path is "Edit to Resubmit" from
+  // the Cashout Log, not a fresh submit with the same REF#.
+  if (!isResubmitMode) {
+    const cashoutId = cashoutDate + '[REF' + refNum + ']';
+    const existing = getBackups().find(b => b.cashoutId === cashoutId);
+    if (existing) {
+      document.getElementById('refNum').classList.add('error');
+      showToast('REF# ' + refNum + ' already used on this date — use a different number or Edit to Resubmit from the Cashout Log', 'error');
+      return;
+    }
+  }
+
   // ── SUSHI BRANCH ─────────────────────────────────────────────────────────────
   if (isSushiType) {
     const sushiNamesRaw  = document.getElementById('sushiNames').value;

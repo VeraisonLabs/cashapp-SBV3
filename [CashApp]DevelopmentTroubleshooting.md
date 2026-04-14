@@ -277,6 +277,35 @@ Matt's contact: `matt@veraisonlabs.com`
 
 ## Potential future improvements
 
+### Multi-iPad REF# conflict check (server-side, column A scan)
+
+**Idea:** Upgrade REF# conflict detection from the current client-side localStorage scan to a server-side scan of column A on today's tab. Would allow safely running the app from more than one iPad in parallel.
+
+**Why this might matter later:**
+- Current check (as of 2026-04-14) is **localStorage-only**. It scans the backup entries saved on *this* iPad for a matching `cashoutId` (`YYYY-MM-DD[REF##]`) and blocks the submit if found. This works perfectly for the intended single-iPad deployment at Sandbar.
+- If Sandbar ever adds a second iPad (or a manager submits from a desktop in parallel), each device's localStorage is blind to the other. Two staff could simultaneously pick REF# 42 on the same day, and both submits would slip past the client-side check.
+- Server-side scan closes that gap because it's authoritative — it reads the REAL state of today's tab, not a device-local cache.
+
+**Trigger this improvement when:**
+- Sandbar plans to use more than one iPad at a time
+- The app is ever deployed to another restaurant with multi-terminal workflow
+- Matt explicitly asks about expanding capability, input sources, or multi-device support
+
+**Implementation sketch (~15 lines in Apps Script):**
+1. In `sb-cashout-apps-script.gs`, replace the section-scoped REF# conflict check with a scan of all non-empty values in column A of today's tab.
+2. Still allow matches during resubmit (`isResubmit === true` in the payload), same as today's section-scoped check does.
+3. Throw `REF_CONFLICT: <refNum>` if a match is found outside the resubmit context. The existing client-side error translation already handles this code — no UI work needed.
+4. Can live alongside the localStorage check. Client catches same-iPad cases instantly (no network); server catches cross-iPad cases as the authoritative safety net.
+
+**Trade-offs:**
+- Requires an Apps Script change and a redeploy.
+- Server check only runs after the POST reaches Google, so feedback is slightly slower than the client-side check.
+- Needs the iPad to be online; the client-side check is still the only guard that works offline.
+
+**Status:** Not implemented as of 2026-04-14. Single-iPad workflow is the explicit current design; localStorage-only REF# check is sufficient for that. This note exists so future-Claude knows the second-stage option without having to rediscover it.
+
+---
+
 ### URL-based manager mode (deep link to Cashout Log)
 
 **Idea:** Replace any "Cashout Log access code" gate with a URL-based soft gate. Two iPad home-screen shortcuts on the same device:
@@ -330,7 +359,16 @@ Matt's contact: `matt@veraisonlabs.com`
 - Requires keeping the anchor IDs in the troubleshooting doc in sync with the mapping in index.html. If an anchor is renamed, the corresponding app link breaks silently. Low risk since anchors are not renamed often.
 - Adds 15-ish lines to index.html, violating the "keep simple" constraint slightly. But the feature is strictly additive and cannot break the submit flow or any other existing functionality.
 
-**Status:** Not implemented as of 2026-04-14. Anchors exist in the troubleshooting doc (added during the live-page work on the same date). Pick this up whenever the "View Troubleshooting Guide" button has been in use long enough to know whether per-row deep linking is worth the extra code.
+**Status:** ✅ **SHIPPED** on 2026-04-14 in commit `f92022f`. The feature was built with the exact architecture sketched above:
+
+- `ERROR_ANCHORS` dictionary in `index.html` maps Apps Script error codes to anchor IDs in the troubleshooting doc.
+- `getDisplayStatus()` now attaches an `anchor` field to every returned status object, covering both Apps-Script errors (REF_CONFLICT, TEMPLATE_MISSING, SECTION_FULL, RESUBMIT_NOT_FOUND, UNKNOWN_SECTION) and non-Apps-Script statuses (err-network-down, err-main-sync-failed, err-backup-sync-failed, err-both-syncs-failed).
+- In `renderBackupsTable()`, error messages are wrapped in `<a class="err-link" href="CashApp-Troubleshooting.html#${anchor}" target="_blank" rel="noopener">` with `onclick="event.stopPropagation()"` so tapping the link opens the troubleshooting page without also triggering the row-selection handler.
+- Bonus additions in the same commit (not part of the original sketch but shipped alongside):
+  - A persistent "View Troubleshooting Guide" button at the top of the Cashout Log view.
+  - The action button "Load into Form" was renamed to "Edit to Resubmit" for clearer intent.
+
+Original design sketch preserved above for historical context — useful when debugging the feature later or extending it.
 
 ---
 
@@ -344,5 +382,9 @@ Matt's contact: `matt@veraisonlabs.com`
 | 2026-04-11 | Matt + Claude | Error messages now NAME the specific artifact ("cashout master sheet", "PM Server Main section", "REF# 42") instead of vague references. Added runbook entries for SECTION_FULL, RESUBMIT_NOT_FOUND, and UNKNOWN_SECTION errors. |
 | 2026-04-11 | Matt + Claude | Added full status/message quick reference table (every possible Backups screen state). Orphan rows from shrinking splits are now auto-cleared instead of left for manual deletion. Approach A locked in: removing no-cors to enable real error reporting. |
 | 2026-04-11 | Matt + Claude | Added backup Apps Script (`sb-backup-apps-script.gs`). Append-only log to `[BackupLog]AllCashouts` sheet. Referenced backup sheet name in troubleshooting doc. |
+| 2026-04-14 | Matt + Claude | Launched `CashApp-Troubleshooting.html` as a second live GitHub Pages URL. Styled header to match the app palette. Added anchor links on the status reference table. |
+| 2026-04-14 | Matt + Claude | Renamed `[CashApp]Troubleshooting.md` → `[CashApp]DevelopmentTroubleshooting.md` to clarify the living-internal-doc vs. stable-client-facing distinction. |
+| 2026-04-14 | Matt + Claude (other session) | Shipped per-row deep links: error messages in the Cashout Log table are now clickable anchors that open the corresponding troubleshooting-guide section. Plus: "View Troubleshooting Guide" button at the top of the log, and "Load into Form" action renamed to "Edit to Resubmit" (commit `f92022f`). |
+| 2026-04-14 | Matt + Claude | Moved the Private Browsing / localStorage warning above Status References so readers can't miss it. Removed the change log section from the client-facing HTML (kept here in the dev doc). |
 
 *Add entries here as you make edits. Keep a paper trail.*
