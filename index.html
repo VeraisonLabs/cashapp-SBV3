@@ -974,14 +974,8 @@
           </div>
         </div>
       </div>
-      <div class="field" id="sFoodTipPoolField" style="display:none;">
-        <label>FOOD SALES #1 (S-FOOD)</label>
-        <div class="dollar-wrap">
-          <input type="number" id="sFoodTipPool" inputmode="decimal" step="0.01" placeholder="0.00">
-        </div>
-      </div>
       <div class="field" id="foodSalesField">
-        <label id="foodSalesLabel">FOOD SALES #2 (DOLLARS COLUMN)</label>
+        <label id="foodSalesLabel">FOOD SALES (DOLLARS COLUMN)</label>
         <div class="dollar-wrap">
           <input type="number" id="foodSales" inputmode="decimal" step="0.01" placeholder="0.00">
         </div>
@@ -1322,11 +1316,8 @@ document.getElementById('section').addEventListener('change', function () {
   document.getElementById('totalSalesField').style.display   = isSushi ? 'none' : 'block';
   document.getElementById('foodSalesField').style.display    = isSushi ? 'none' : 'block';
   document.getElementById('beoSalesField').style.display     = isSushi ? 'none' : 'block';
-  document.getElementById('sFoodTipPoolField').style.display = isBar   ? 'block' : 'none';
-  if (!isBar) document.getElementById('sFoodTipPool').value  = '';
-  document.getElementById('foodSalesLabel').textContent = isBar
-    ? 'FOOD SALES #2 (DOLLARS COLUMN)'
-    : 'FOOD SALES (DOLLARS COLUMN)';
+  // Bar used to have a separate S-Food Tip Pool field; now it uses the same
+  // FOOD SALES (DOLLARS COLUMN) input as servers, for all tip-out calcs.
 
   // Net Cash label & sign button
   const signBtn = document.getElementById('netCashSignBtn');
@@ -1575,7 +1566,6 @@ function calculate() {
   const netCashAbs   = parseFloat(netCashRaw) || 0;
   const netCash      = netCashNegative ? -Math.abs(netCashAbs) : Math.abs(netCashAbs);
   const foodSales    = parseFloat(document.getElementById('foodSales').value)    || 0;
-  const sFoodTipPool = isBarType ? (parseFloat(document.getElementById('sFoodTipPool').value) || 0) : 0;
   const beoSales     = parseFloat(document.getElementById('beoSales').value)     || 0;
 
   const serverSplitOn = !isBarType && document.getElementById('serverSplitCb').checked;
@@ -1588,9 +1578,9 @@ function calculate() {
   if (!serverValid) { showToast('Please fill in all required fields', 'error'); return; }
 
   // Core tip-out calculations
-  // Bar cashouts: house & busser based on S-Food (sFoodTipPool), no bar tip-out
+  // Bar cashouts: house & busser based on food sales (same input as servers), no bar tip-out
   // Server cashouts: house & busser based on total sales, bar tip-out applies
-  const houseBase    = isBarType ? sFoodTipPool : totalSales;
+  const houseBase    = isBarType ? foodSales : totalSales;
   const house        = roundHalfUp(houseBase * 0.035);
   const busser       = roundHalfUp(houseBase * 0.01);
   const bar          = (isBarType || splitIncBarOn) ? 0 : roundHalfUp(totalSales * 0.01);
@@ -1692,7 +1682,7 @@ function calculate() {
 
   calcData = {
     cashoutDate, refNum, section, isSushiType: false,
-    names, totalSales, netCash, foodSales, sFoodTipPool, beoSales,
+    names, totalSales, netCash, foodSales, beoSales,
     house, busser, bar, expo, events, totalTipOut, finalAmount, persons
   };
   document.getElementById('results').style.display = 'block';
@@ -1742,7 +1732,6 @@ async function submitCashout(isResubmit) {
       totalSales:   calcData.totalSales,
       netCash:      calcData.netCash,
       foodSales:    calcData.foodSales,
-      sFoodTipPool: calcData.sFoodTipPool || 0,
       beoSales:     calcData.beoSales,
       house:        roundHalfUp(calcData.house       * p.share),
       busser:       roundHalfUp(calcData.busser      * p.share),
@@ -1766,7 +1755,6 @@ async function submitCashout(isResubmit) {
     netCash:         document.getElementById('netCash').value,
     netCashNegative: netCashNegative,
     foodSales:       document.getElementById('foodSales').value,
-    sFoodTipPool:    document.getElementById('sFoodTipPool').value,
     beoSales:        document.getElementById('beoSales').value,
     serverSplitOn:   document.getElementById('serverSplitCb')?.checked || false,
     serverSplitType: serverSplitType,
@@ -1854,7 +1842,7 @@ function resetForm() {
   document.getElementById('errorBanner').style.display = 'none';
   document.getElementById('successBanner').style.display = 'none';
 
-  ['cashoutDate','refNum','names','totalSales','netCash','foodSales','sFoodTipPool','beoSales','sushiNames']
+  ['cashoutDate','refNum','names','totalSales','netCash','foodSales','beoSales','sushiNames']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   // Re-set date to today
   document.getElementById('cashoutDate').value = new Date()
@@ -1878,7 +1866,6 @@ function resetForm() {
   document.getElementById('totalSalesField').style.display       = 'block';
   document.getElementById('foodSalesField').style.display        = 'block';
   document.getElementById('beoSalesField').style.display         = 'block';
-  document.getElementById('sFoodTipPoolField').style.display     = 'none';
 
   // Reset customization checkboxes and sections
   ['serverSplitCb','splitIncBarCb','sushiBarHoursCb','sushiTeamHoursCb'].forEach(id => {
@@ -2345,7 +2332,6 @@ function loadFromBackup(entry) {
   document.getElementById('totalSales').value = fi.totalSales || '';
   document.getElementById('netCash').value = fi.netCash || '';
   document.getElementById('foodSales').value = fi.foodSales || '';
-  document.getElementById('sFoodTipPool').value = fi.sFoodTipPool || '';
   document.getElementById('beoSales').value = fi.beoSales || '';
 
   // 3. Restore the net cash sign toggle
