@@ -626,6 +626,13 @@
   .status-badge.manual    { background: rgba(139,148,158,0.15); color: var(--muted); }
 
   .msg-cell { font-size: 10px; color: var(--muted); max-width: 140px; }
+  .err-link {
+    color: inherit;
+    text-decoration: underline dashed;
+    text-underline-offset: 2px;
+    cursor: pointer;
+  }
+  .err-link:hover { color: var(--accent); }
 
   .backup-actions {
     display: flex;
@@ -661,6 +668,90 @@
   }
   .backup-action-btn:hover { opacity: 0.88; }
 
+  /* Caution note under the resubmit/mark-synced buttons */
+  .resubmit-note {
+    color: var(--accent);
+    font-size: 11px;
+    text-align: center;
+    margin-top: 8px;
+    line-height: 1.4;
+  }
+  .resubmit-note em { font-style: italic; }
+
+  /* Inline lock notice shown between the CASHOUT DATE label and the input
+     while a resubmit is in progress. Kept small — this won't appear often. */
+  .resubmit-lock-warning {
+    margin-bottom: 8px;
+    padding: 6px 8px;
+    background: rgba(248, 81, 73, 0.12);
+    border: 1px solid var(--red);
+    border-left: 3px solid var(--red);
+    border-radius: 4px;
+    color: var(--red);
+    font-size: 10px;
+    line-height: 1.35;
+  }
+  .resubmit-lock-warning strong {
+    display: block;
+    font-family: 'Syne', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+  #cashoutDate:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: var(--surface);
+  }
+
+  /* Troubleshooting help panel — always visible on the Cashout Log screen */
+  .backup-help-hint {
+    margin-top: 16px;
+    padding: 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    text-align: center;
+    line-height: 1.4;
+  }
+  .backup-help-hint .help-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 10px;
+  }
+  .backup-help-hint .help-body {
+    font-size: 12px;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+  .backup-help-hint .help-or {
+    font-size: 11px;
+    color: var(--muted);
+    font-style: italic;
+    margin: 6px 0;
+  }
+  .error-guide-btn {
+    display: inline-block;
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: all 0.15s;
+    margin-top: 4px;
+  }
+  .error-guide-btn:hover { background: var(--accent); color: #000; }
+
   /* Quick-view read-only data panel inside backupDetail */
   .backup-quickview {
     background: var(--surface2);
@@ -694,12 +785,14 @@
   }
   .qv-divider { height: 1px; background: var(--border); margin: 8px 0; }
 
-  /* Reset button */
+  /* Reset button — always visible, always pressable. The .active class
+     makes it red/attention-grabbing after a submit, but it remains fully
+     usable at any time so the form can be cleared on demand. */
   .reset-btn {
     width: 100%;
     padding: 16px;
     background: var(--surface2);
-    color: var(--muted);
+    color: var(--text);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     font-family: 'Syne', sans-serif;
@@ -709,14 +802,14 @@
     cursor: pointer;
     transition: all 0.2s;
     margin-top: 8px;
-    opacity: 0.35;
   }
+  .reset-btn:hover { border-color: var(--accent); color: var(--accent); }
   .reset-btn.active {
     background: var(--red);
     color: #fff;
     border-color: var(--red);
-    opacity: 1;
   }
+  .reset-btn.active:hover { border-color: var(--red); color: #fff; opacity: 0.92; }
   .reset-btn:active { transform: scale(0.98); }
 </style>
 </head>
@@ -736,6 +829,10 @@
   <div class="card">
     <div class="field">
       <label>CASHOUT DATE</label>
+      <div class="resubmit-lock-warning" id="dateResubmitLock" style="display:none;">
+        <strong>Date Locked for Resubmit</strong>
+        <div>Inform manager if wrong day was submitted</div>
+      </div>
       <input type="date" id="cashoutDate">
     </div>
     <div class="field">
@@ -976,8 +1073,12 @@
     <button class="submit-btn" id="submitBtn" onclick="submitCashout(isResubmitMode)">
       Submit Cashout
     </button>
-    <button class="reset-btn" id="resetBtn" onclick="resetForm()">Start New Cashout</button>
   </div>
+
+  <!-- Start New Cashout — always visible on the calculator screen, including
+       before Calculate is pressed and while a resubmit is loaded. Lets staff
+       clear the form or back out of a resubmit without needing a refresh. -->
+  <button class="reset-btn" id="resetBtn" onclick="resetForm()">Start New Cashout</button>
 
   <!-- BACKUPS SCREEN -->
   <div id="backupsScreen">
@@ -1007,9 +1108,18 @@
       <div class="section-label" id="backupDetailLabel">—</div>
       <div class="backup-quickview" id="backupQuickView"></div>
       <div class="backup-actions">
-        <button class="backup-action-btn resubmit" id="backupResubmitBtn" onclick="resubmitFromBackup()">Load into Form</button>
+        <button class="backup-action-btn resubmit" id="backupResubmitBtn" onclick="resubmitFromBackup()">Edit to Resubmit</button>
         <button class="backup-action-btn mark-synced" id="backupMarkSyncedBtn" onclick="markAsSynced()">Mark as Synced</button>
       </div>
+      <div class="resubmit-note">Note: <em>Resubmitting will replace cashout by Reference Number</em></div>
+    </div>
+
+    <!-- Troubleshooting help panel — always visible on the Cashout Log screen -->
+    <div class="backup-help-hint">
+      <div class="help-title">Troubleshooting</div>
+      <div class="help-body">Tap error message to view troubleshooting steps.</div>
+      <div class="help-or">Or</div>
+      <a class="error-guide-btn" href="CashApp-Troubleshooting.html" target="_blank" rel="noopener">View Troubleshooting Guide</a>
     </div>
   </div>
 
@@ -1050,6 +1160,17 @@ let calcData         = null;
 let syncingNames     = false;
 let isResubmitMode   = false;  // set to true when loading from backup
 
+// Toggle resubmit mode AND the matching UI lock on the cashout-date field.
+// The date must stay at the original cashout's date so the resubmit lands on
+// the same daily tab as the original. Changing it would orphan records.
+function setResubmitMode(on) {
+  isResubmitMode = on;
+  const dateEl = document.getElementById('cashoutDate');
+  const lockEl = document.getElementById('dateResubmitLock');
+  if (dateEl) dateEl.disabled = on;
+  if (lockEl) lockEl.style.display = on ? 'block' : 'none';
+}
+
 // ── ERROR CODE → DISPLAY MESSAGE DICTIONARY ──────────────────────────────────
 // Apps Script throws short stable codes. The iPad translates them here.
 // Problem-first, reassurance-last. Staff reads the problem, tells the manager.
@@ -1059,6 +1180,17 @@ const ERROR_MESSAGES = {
   SECTION_FULL:        { problem: '{param} section is full, no empty rows' },
   RESUBMIT_NOT_FOUND:  { problem: 'REF# {param} not found, use fresh Submit instead' },
   UNKNOWN_SECTION:     { problem: 'Unknown section "{param}", contact Matt' },
+};
+
+// Error code → anchor on client-facing CashApp-Troubleshooting.html. Keep in
+// sync with the h3 ids in that file; anchors link from the Cashout Log to the
+// exact section managers need to read when an error lands.
+const ANCHOR_BY_CODE = {
+  REF_CONFLICT:       'err-ref-conflict',
+  TEMPLATE_MISSING:   'err-template-missing',
+  SECTION_FULL:       'err-section-full',
+  RESUBMIT_NOT_FOUND: 'err-resubmit-not-found',
+  UNKNOWN_SECTION:    'err-unknown-section',
 };
 
 function parseErrorCode(errorString) {
@@ -1120,21 +1252,24 @@ function updateBackupStatus(cashoutId, field, status, message) {
 }
 
 function getDisplayStatus(entry) {
-  // Derive a single display status from the two POST results
-  if (entry.mainStatus === 'manual') return { status: 'Synced', message: 'Manually synced' };
-  if (entry.mainStatus === 'success' && entry.backupStatus === 'success') return { status: 'Synced', message: '' };
-  if (entry.mainStatus === 'success' && entry.backupStatus !== 'success') return { status: 'Synced', message: 'Backup sync failed (not urgent)' };
-  if (entry.mainStatus !== 'success' && entry.backupStatus === 'success') return { status: 'Partial', message: 'Main sheet sync failed, backup sheet OK' };
+  // Derive a single display status from the two POST results.
+  // `anchor` (if set) links the message to the matching section in the
+  // client-facing troubleshooting guide.
+  if (entry.mainStatus === 'manual') return { status: 'Synced', message: 'Manually synced', anchor: null };
+  if (entry.mainStatus === 'success' && entry.backupStatus === 'success') return { status: 'Synced', message: '', anchor: null };
+  if (entry.mainStatus === 'success' && entry.backupStatus !== 'success') return { status: 'Synced', message: 'Backup sync failed (not urgent)', anchor: 'err-backup-sync-failed' };
+  if (entry.mainStatus !== 'success' && entry.backupStatus === 'success') return { status: 'Partial', message: 'Main sheet sync failed, backup sheet OK', anchor: 'err-main-sync-failed' };
   if (entry.mainStatus === 'error' && entry.mainMessage) {
     const parsed = parseErrorCode(entry.mainMessage);
-    if (parsed.code === 'REF_CONFLICT') return { status: 'Conflict', message: parsed.problem };
-    return { status: 'Error', message: parsed.problem };
+    const anchor = ANCHOR_BY_CODE[parsed.code] || null;
+    if (parsed.code === 'REF_CONFLICT') return { status: 'Conflict', message: parsed.problem, anchor };
+    return { status: 'Error', message: parsed.problem, anchor };
   }
   if (entry.mainStatus === 'pending' && entry.backupStatus === 'pending') {
-    if (entry.mainMessage) return { status: 'Pending', message: entry.mainMessage };
-    return { status: 'Pending', message: 'Network error, not submitted' };
+    if (entry.mainMessage) return { status: 'Pending', message: entry.mainMessage, anchor: null };
+    return { status: 'Pending', message: 'Network error, not submitted', anchor: 'err-network-down' };
   }
-  return { status: 'Pending', message: entry.mainMessage || 'Both syncs failed' };
+  return { status: 'Pending', message: entry.mainMessage || 'Both syncs failed', anchor: 'err-both-syncs-failed' };
 }
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
@@ -1783,7 +1918,7 @@ function resetForm() {
 
   barSplitType = 'equal';
   calcData = null;
-  isResubmitMode = false;
+  setResubmitMode(false);
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -2051,10 +2186,15 @@ function renderBackupsTable() {
     ].filter(Boolean).join(' ');
     const olderLabel = isOlderCopy ? `<span class="older-copy-label">older copy</span>` : '';
 
+    const cleanMsg = display.message.replace(/^Unexpected error:\s*/i, '');
+    const msgHtml = display.anchor && cleanMsg
+      ? `<a href="CashApp-Troubleshooting.html#${display.anchor}" target="_blank" rel="noopener" class="err-link" onclick="event.stopPropagation();">${cleanMsg}</a>`
+      : cleanMsg;
+
     return `<tr onclick="selectBackupRow('${b.cashoutId}', ${idx})" class="${rowClasses}">
       <td style="white-space:nowrap;font-size:10px;">${b.cashoutId}${olderLabel}</td>
       <td><span class="status-badge ${statusClass}">${display.status}</span></td>
-      <td class="msg-cell">${display.message.replace(/^Unexpected error:\s*/i, '')}</td>
+      <td class="msg-cell">${msgHtml}</td>
       <td>${names}</td>
       <td style="white-space:nowrap;">${section}</td>
       <td style="text-align:center;">${sharedBy}</td>
@@ -2081,7 +2221,7 @@ function selectBackupRow(cashoutId, idx) {
     // Load into Form: always available so managers can reload any cashout
     resubBtn.style.display = '';
     // Relabel + re-color when loading an older copy — makes it harder to trigger by accident
-    resubBtn.textContent = isOlderCopy ? 'Load Older Copy into Form' : 'Load into Form';
+    resubBtn.textContent = isOlderCopy ? 'Edit Older Copy to Resubmit' : 'Edit to Resubmit';
     resubBtn.classList.toggle('older-copy', isOlderCopy);
     // Mark as Synced: hidden if already synced (action has no meaning)
     syncBtn.style.display = display.status === 'Synced' ? 'none' : '';
@@ -2237,8 +2377,9 @@ function loadFromBackup(entry) {
     toggleSushiTeamHours();
   }
 
-  // 5. Mark this as a resubmit so submitCashout sends isResubmit: true
-  isResubmitMode = true;
+  // 5. Mark this as a resubmit so submitCashout sends isResubmit: true,
+  //    and lock the cashout-date field so the date can't be changed.
+  setResubmitMode(true);
 
   showToast('Loaded from backup — review and submit', 'success');
   window.scrollTo({ top: 0, behavior: 'smooth' });
