@@ -334,30 +334,6 @@
       margin: 2rem 0;
     }
 
-    /* ── Change log ── */
-    .changelog {
-      font-size: 0.85rem;
-      color: var(--gray-700);
-    }
-
-    .changelog table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 0.5rem;
-    }
-
-    .changelog th,
-    .changelog td {
-      text-align: left;
-      padding: 0.5rem 0.6rem;
-      border-bottom: 1px solid var(--gray-200);
-    }
-
-    .changelog th {
-      font-weight: 600;
-      background: var(--gray-100);
-    }
-
     /* ── Footer ── */
     footer {
       text-align: center;
@@ -771,6 +747,32 @@
         belonged to which cashout.</p>
     </div>
 
+    <div class="card">
+      <h3 id="err-wrong-date-submitted">Wrong date was submitted — manager fix required</h3>
+      <p>If a staff member originally submitted a cashout with the wrong date (for example, typed yesterday's date into
+        today's cashout), the record lands on the wrong daily tab in the master sheet. The app cannot correct this
+        automatically &mdash; the date field is locked during <strong>Edit to Resubmit</strong> on purpose, because
+        changing it from the iPad would create orphan records on yet another tab.</p>
+      <div class="callout callout-warn">
+        <h4>What to watch for:</h4>
+        Staff reports that their cashout doesn't appear on today's tab, or shows up on a different day's tab. Do NOT
+        have them use <strong>Edit to Resubmit</strong> to try to correct it &mdash; the date field is locked, and
+        resubmitting would only overwrite the row on the wrong date.
+      </div>
+      <p><strong>How to fix (manager, manual):</strong></p>
+      <ol class="steps">
+        <li>Open the master cashout sheet in Google Drive</li>
+        <li>Find the tab for the WRONG date and locate the cashout row(s) by REF#</li>
+        <li>Copy the row data into the correct date's tab (the same rows / section the cashout belongs to)</li>
+        <li>Delete the original row(s) from the wrong date's tab</li>
+        <li>On the iPad, open the Cashout Log, select the entry, and tap <strong>Mark as Synced</strong> &mdash; not
+          Resubmit. This clears the pending status without sending the row anywhere.</li>
+      </ol>
+      <p style="font-size:0.9rem; color:var(--gray-500);">Why this isn't automated: the app treats the date the staff
+        member entered as the source of truth. Detecting a "wrong date" requires human judgment about what the correct
+        date should have been &mdash; something only a manager can decide.</p>
+    </div>
+
     <hr>
 
     <!-- ═══════════════════════════════════════════ -->
@@ -856,59 +858,6 @@
       </ol>
       <p style="margin-top:0.75rem;"><strong>Matt's contact:</strong> <a
           href="mailto:matt@veraisonlabs.com">matt@veraisonlabs.com</a></p>
-    </div>
-
-    <hr>
-
-    <!-- ═══════════════════════════════════════════ -->
-    <!-- CHANGE LOG -->
-    <!-- ═══════════════════════════════════════════ -->
-    <div class="changelog">
-      <h2 style="font-size:1.1rem;">Change Log</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Added by</th>
-            <th>Change</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>2026-04-11</td>
-            <td>Matt + Claude</td>
-            <td>Initial scaffold during v3 build</td>
-          </tr>
-          <tr>
-            <td>2026-04-11</td>
-            <td>Matt + Claude</td>
-            <td>Added "bar cashout resubmit stale bartender entries" known limitation</td>
-          </tr>
-          <tr>
-            <td>2026-04-11</td>
-            <td>Matt + Claude</td>
-            <td>Error display rule: reassurance now at BOTTOM of message</td>
-          </tr>
-          <tr>
-            <td>2026-04-11</td>
-            <td>Matt + Claude</td>
-            <td>Error messages now name the specific artifact. Added SECTION_FULL, RESUBMIT_NOT_FOUND, UNKNOWN_SECTION
-              runbooks.</td>
-          </tr>
-          <tr>
-            <td>2026-04-11</td>
-            <td>Matt + Claude</td>
-            <td>Added full status/message quick reference table. Orphan rows auto-cleared. Approach A locked in (no-cors
-              removed).</td>
-          </tr>
-          <tr>
-            <td>2026-04-11</td>
-            <td>Matt + Claude</td>
-            <td>Added backup Apps Script. Append-only log to [BackupLog]AllCashouts sheet.</td>
-          </tr>
-        </tbody>
-      </table>
-      <p style="margin-top:0.5rem; font-style:italic;">Add entries here as you make edits. Keep a paper trail.</p>
     </div>
 
   </main>
