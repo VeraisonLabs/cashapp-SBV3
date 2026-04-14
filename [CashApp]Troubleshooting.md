@@ -1,4 +1,4 @@
-# Sandbar Cashout App — Troubleshooting Guide
+#SB CashApp — Developer Troubleshooting
 
 **Living document.** Add to this as issues come up. When something breaks and you figure out how to fix it, write it down here so next time is faster.
 
