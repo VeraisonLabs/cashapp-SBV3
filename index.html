@@ -2270,8 +2270,15 @@ const VIEWPORT_LOCKED = 'width=device-width, initial-scale=1.0, maximum-scale=1.
 const VIEWPORT_ZOOMABLE = 'width=device-width, initial-scale=1.0';
 
 function setViewport(content) {
-  const meta = document.querySelector('meta[name="viewport"]');
-  if (meta) meta.setAttribute('content', content);
+  // iOS Safari (especially in home-screen/standalone mode) often ignores
+  // setAttribute on an existing viewport meta — zoom policy gets cached at
+  // the original node. Replacing the node entirely forces iOS to re-evaluate.
+  const oldMeta = document.querySelector('meta[name="viewport"]');
+  if (oldMeta && oldMeta.parentNode) oldMeta.parentNode.removeChild(oldMeta);
+  const newMeta = document.createElement('meta');
+  newMeta.name = 'viewport';
+  newMeta.content = content;
+  document.head.appendChild(newMeta);
 }
 
 function toggleBackupsScreen() {
