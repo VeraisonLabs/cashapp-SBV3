@@ -57,6 +57,7 @@
       letter-spacing: 0.02em;
       margin-bottom: 0.4rem;
       color: #ffffff;
+      word-break: break-word;
     }
 
     header .subtitle {
@@ -64,6 +65,21 @@
       font-weight: 400;
       color: #f0a500;
       letter-spacing: 0.05em;
+    }
+
+    /* Shrink the header on phone widths so the title doesn't overflow
+       or force horizontal scrolling. */
+    @media (max-width: 600px) {
+      header {
+        padding: 2rem 1rem 1.75rem;
+      }
+      header h1 {
+        font-size: 1.5rem;
+        letter-spacing: 0.01em;
+      }
+      header .subtitle {
+        font-size: 0.9rem;
+      }
     }
 
     /* ── Main container ── */
