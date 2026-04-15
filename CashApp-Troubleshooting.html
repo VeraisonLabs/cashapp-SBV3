@@ -81,6 +81,36 @@
       margin: 2.5rem 0 1rem;
       padding-bottom: 0.4rem;
       border-bottom: 2px solid var(--ocean-light);
+      scroll-margin-top: 16px;  /* small buffer when jumping from section-nav */
+    }
+
+    /* ── Section jump nav ── */
+    .section-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin: 1rem 0 1.5rem;
+      padding: 0.75rem;
+      background: #fff;
+      border: 1px solid var(--ocean-light);
+      border-radius: 8px;
+    }
+    .section-nav a {
+      display: inline-block;
+      padding: 0.3rem 0.7rem;
+      background: #f5f9fc;
+      border: 1px solid var(--ocean-light);
+      border-radius: 999px;
+      color: var(--ocean);
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: all 0.12s;
+    }
+    .section-nav a:hover {
+      background: var(--ocean);
+      color: #fff;
+      border-color: var(--ocean);
     }
 
     h3 {
@@ -377,12 +407,22 @@
     <div class="subtitle">SB Cashout Calculator</div>
   </header>
 
+  <nav class="section-nav" aria-label="Jump to section">
+    <a href="#quick-orientation">Quick Orientation</a>
+    <a href="#status-references">Status References</a>
+    <a href="#errors">Error Messages</a>
+    <a href="#limitations">Known Limitations</a>
+    <a href="#save-monthly">Save Monthly Cashouts</a>
+    <a href="#cashout-log">Cashout Log</a>
+    <a href="#last-resort">When Nothing Helps</a>
+  </nav>
+
   <main>
 
     <!-- ═══════════════════════════════════════════ -->
     <!-- QUICK ORIENTATION -->
     <!-- ═══════════════════════════════════════════ -->
-    <h2>Quick Orientation</h2>
+    <h2 id="quick-orientation">Quick Orientation</h2>
     <p>There are <strong>three layers</strong> of data storage to prevent cashout data from being lost. This document
       helps identify issues and provides steps to fix.</p>
 
@@ -464,7 +504,7 @@
     <!-- ═══════════════════════════════════════════ -->
     <!-- STATUS REFERENCE TABLE -->
     <!-- ═══════════════════════════════════════════ -->
-    <h2>Status References</h2>
+    <h2 id="status-references">Status References</h2>
 
     <div style="overflow-x:auto;">
       <table class="status-table">
@@ -558,7 +598,7 @@
     <!-- ═══════════════════════════════════════════ -->
     <!-- ERROR RUNBOOKS -->
     <!-- ═══════════════════════════════════════════ -->
-    <h2>Error Messages & Solutions</h2>
+    <h2 id="errors">Error Messages &amp; Solutions</h2>
 
     <!-- Template tab -->
     <div class="card">
@@ -771,7 +811,7 @@
     <!-- ═══════════════════════════════════════════ -->
     <!-- KNOWN LIMITATION -->
     <!-- ═══════════════════════════════════════════ -->
-    <h2>Known Limitations</h2>
+    <h2 id="limitations">Known Limitations</h2>
 
     <div class="card">
       <h3>Bar cashout resubmits may leave stale bartender entries</h3>
@@ -849,17 +889,17 @@
     <hr>
 
     <!-- ═══════════════════════════════════════════ -->
-    <!-- ARCHIVE WORKFLOW -->
+    <!-- SAVE MONTHLY CASHOUTS -->
     <!-- ═══════════════════════════════════════════ -->
-    <h2>Archive Workflow</h2>
+    <h2 id="save-monthly">How to: Save Monthly Cashouts</h2>
     <p>The master cashout sheet accumulates one tab per day forever. Every so often (end of month, end of quarter,
       whenever it feels cluttered), archive the old tabs:</p>
     <ol class="steps">
       <li>Open the master cashout sheet in Google Drive</li>
       <li>Right-click the file &rarr; <strong>Make a copy</strong></li>
-      <li>Rename the copy to something like <code>Sandbar Cashout &mdash; 2026-Q1 Archive</code></li>
+      <li>Rename the copy for the Month (or desired period) it applies to</li>
       <li>Move the copy to an archive folder if desired</li>
-      <li>Open the ORIGINAL master sheet</li>
+      <li>Reopen the original <strong>DailyCashout-Master Sheet</strong></li>
       <li>Delete the old dated tabs you just archived (leave the template tab and any current-period tabs alone)</li>
     </ol>
 
@@ -878,7 +918,7 @@
     <!-- ═══════════════════════════════════════════ -->
     <!-- CASHOUT LOG -->
     <!-- ═══════════════════════════════════════════ -->
-    <h2>The iPad Cashout Log</h2>
+    <h2 id="cashout-log">The iPad Cashout Log</h2>
     <p>The Cashout Log on the iPad is the safety net. Every cashout ever submitted from this iPad is stored there,
       even ones that successfully made it to the sheet. Each row in the table shows:</p>
 
@@ -916,7 +956,7 @@
     <!-- ═══════════════════════════════════════════ -->
     <!-- WHEN NOTHING HELPS -->
     <!-- ═══════════════════════════════════════════ -->
-    <h2>When Nothing in This Doc Helps</h2>
+    <h2 id="last-resort">When Nothing in This Doc Helps</h2>
     <div class="card">
       <ol class="steps">
         <li>Don't delete anything on the iPad or in the master sheet</li>
