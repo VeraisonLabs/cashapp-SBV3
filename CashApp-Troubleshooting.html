@@ -828,19 +828,19 @@
     <!-- Unknown section -->
     <div class="card">
       <h3 id="err-unknown-section" class="error-anchor">Error: "Unknown section '[section name]', contact Matt"</h3>
-      <p>The app tried to submit a cashout with a section name that the Apps Script doesn't recognize. This should never
-        happen in normal operation.</p>
+      <p>The app tried to submit a cashout with a section name (Cashout Type) that the Apps Script doesn't recognize.
+        Because the Cashout Type is a fixed dropdown in the app, this shouldn't normally happen &mdash; it only fires
+        if the iPad and Apps Script are out of sync (a new type added to one but not the other, or an iPad running a
+        stale cached version).</p>
       <div class="callout callout-safe">
-        <h4>What's safe:</h4> The cashout is stored on the iPad. Nothing was
-        written to the sheet.
+        <h4>What's safe:</h4> The cashout is stored on the iPad. Nothing was written to the sheet.
       </div>
       <h3>How to fix</h3>
       <ol class="steps">
-        <li>Screenshot the error (including the exact section name in the message)</li>
-        <li>Note the Cashout ID from the error screen</li>
-        <li>Email or text Matt ASAP &mdash; this is a code-level bug and cashouts with this section won't sync to
-          the master sheet. DailyCashout data may require manual entry until fixed.</li>
-        <li>In the meantime: either enter the cashout manually in the master sheet, or wait for the fix</li>
+        <li>Open the Cashout Log on the iPad and tap the affected entry so the full cashout data is visible</li>
+        <li>Take a photo of the screen (cashout data and error message should both be visible)</li>
+        <li>Email or text Matt ASAP with the photo &mdash; this is the only way Matt gets notified. DailyCashout data
+          may require manual entry until fixed.</li>
       </ol>
     </div>
 
