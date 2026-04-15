@@ -1964,7 +1964,19 @@ async function submitCashout(isResubmit) {
     // Show persistent error banner (problem-first, reassurance-last)
     const msg = mainResult.message || 'Unknown error';
     const isNetworkError = msg.startsWith('Network error') || msg.startsWith('Apps Script error');
-    const displayMsg = isNetworkError ? msg : parseErrorCode(msg).problem;
+    const parsed = !isNetworkError ? parseErrorCode(msg) : null;
+
+    // Server-side REF_CONFLICT is semantically different from the client-side
+    // check: it means another DEVICE already submitted that REF# today. That's
+    // an operational signal (normally only one device submits at a time), so
+    // the staff is told to escalate to the manager AND given the tripled-REF#
+    // recovery path inline in the message.
+    let displayMsg;
+    if (parsed?.code === 'REF_CONFLICT') {
+      displayMsg = 'Submission error. Inform Manager of duplicate REF# and resubmit cashout using # repeated 3x (ex: 1→111)';
+    } else {
+      displayMsg = isNetworkError ? msg : parsed.problem;
+    }
 
     document.getElementById('errorProblem').textContent = displayMsg;
     document.getElementById('errorCashoutId').textContent = 'Cashout ID: ' + cashoutId;
