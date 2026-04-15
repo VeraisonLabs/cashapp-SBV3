@@ -2264,6 +2264,16 @@ function recalcFromTipouts() {
 let selectedBackupId = null;
 let selectedBackupIndex = null;  // specific array index, so "older copy" rows select themselves, not the newest with the same id
 
+// Viewport strings: form screen locks zoom to prevent accidental pinch during
+// data entry; log screen allows zoom so small table text is readable on phones.
+const VIEWPORT_LOCKED = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+const VIEWPORT_ZOOMABLE = 'width=device-width, initial-scale=1.0';
+
+function setViewport(content) {
+  const meta = document.querySelector('meta[name="viewport"]');
+  if (meta) meta.setAttribute('content', content);
+}
+
 function toggleBackupsScreen() {
   const screen = document.getElementById('backupsScreen');
   const isShowing = screen.style.display === 'block';
@@ -2275,6 +2285,7 @@ function toggleBackupsScreen() {
       if (el.id !== 'backupsScreen') el.style.display = '';
     });
     document.getElementById('backupsToggle').textContent = 'Cashout Log';
+    setViewport(VIEWPORT_LOCKED);
   } else {
     // Show backups, hide main form elements
     document.querySelectorAll('.container > *').forEach(el => {
@@ -2283,6 +2294,7 @@ function toggleBackupsScreen() {
     screen.style.display = 'block';
     document.getElementById('backupsToggle').textContent = 'Calculator';
     renderBackupsTable();
+    setViewport(VIEWPORT_ZOOMABLE);
   }
   document.getElementById('backupDetail').style.display = 'none';
   selectedBackupId = null;
