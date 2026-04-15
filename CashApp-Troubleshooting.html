@@ -548,84 +548,84 @@
       <table class="status-table">
         <thead>
           <tr>
-            <th>What happened</th>
             <th>Status</th>
             <th>Message on iPad</th>
             <th>What to do</th>
+            <th>What happened</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td>Cashout submitted successfully</td>
             <td><span class="badge badge-synced">Synced</span></td>
             <td><em>(blank)</em></td>
             <td>Nothing.<br>Master Cashout Sheet updated.</td>
+            <td>Cashout submitted successfully</td>
           </tr>
           <tr>
-            <td>WiFi down or no internet</td>
             <td><span class="badge badge-pending">Pending</span></td>
             <td><a href="#err-network-down">Network error, not submitted</a></td>
             <td>Check WiFi, resubmit when connected</td>
+            <td>WiFi down or no internet</td>
           </tr>
           <tr>
-            <td>Apps Script deployment broken or quota exceeded</td>
             <td><span class="badge badge-error">Error</span></td>
             <td>Apps Script error (HTTP 500)</td>
             <td>Email/text Matt ASAP</td>
+            <td>Apps Script deployment broken or quota exceeded</td>
           </tr>
           <tr>
-            <td>Apps Script URL is wrong or expired</td>
             <td><span class="badge badge-error">Error</span></td>
             <td>Apps Script error (HTTP 404)</td>
             <td>Email/text Matt ASAP</td>
+            <td>Apps Script URL is wrong or expired</td>
           </tr>
           <tr>
-            <td>Template tab was deleted from cashout master sheet</td>
             <td><span class="badge badge-error">Error</span></td>
             <td><a href="#err-template-missing">Template tab not found on cashout master sheet</a></td>
             <td>Restore template from backup sheet (see steps below)</td>
+            <td>Template tab was deleted from cashout master sheet</td>
           </tr>
           <tr>
-            <td>Staff used a REF# that's already on today's sheet</td>
             <td><span class="badge badge-conflict">Conflict</span></td>
             <td><a href="#err-ref-conflict">REF# X already exists on today's sheet</a></td>
             <td>Check if typo or intentional, then correct and resubmit or overwrite</td>
+            <td>Staff used a REF# that's already on today's sheet</td>
           </tr>
           <tr>
-            <td>Section has no empty rows left</td>
             <td><span class="badge badge-error">Error</span></td>
             <td><a href="#err-section-full">X section is full, no empty rows</a></td>
             <td>Check sheet for duplicate/stale rows, clean up, resubmit</td>
+            <td>Section has no empty rows left</td>
           </tr>
           <tr>
-            <td>Resubmit tried but no matching rows and no empty slots</td>
             <td><span class="badge badge-error">Error</span></td>
             <td><a href="#err-resubmit-not-found">REF# X not found in [section], use fresh Submit instead</a></td>
             <td>Load into form, submit as fresh</td>
+            <td>Resubmit tried but no matching rows and no empty slots</td>
           </tr>
           <tr>
-            <td>Apps Script doesn't recognize the section name</td>
             <td><span class="badge badge-error">Error</span></td>
             <td><a href="#err-unknown-section">Unknown section "X", contact Matt</a></td>
             <td>Screenshot it, email/text Matt ASAP</td>
+            <td>Apps Script doesn't recognize the section name</td>
           </tr>
           <tr>
-            <td>Main sheet failed but backup sheet succeeded</td>
             <td><span class="badge badge-partial">Partial</span></td>
             <td><a href="#err-main-sync-failed">Main sheet sync failed, backup sheet OK</a></td>
             <td>Check backup sheet, resubmit to retry main sheet</td>
+            <td>Main sheet failed but backup sheet succeeded</td>
           </tr>
           <tr>
-            <td>Backup sheet failed but main sheet succeeded</td>
             <td><span class="badge badge-synced">Synced</span></td>
             <td><a href="#err-backup-sync-failed">Backup sync failed (not urgent)</a></td>
             <td>Main sheet has the data, email Matt when convenient</td>
+            <td>Backup sheet failed but main sheet succeeded</td>
           </tr>
           <tr>
-            <td>Both syncs failed</td>
             <td><span class="badge badge-pending">Pending</span></td>
             <td><a href="#err-both-syncs-failed">Both syncs failed</a></td>
             <td>Resubmit when network/Google is stable</td>
+            <td>Both syncs failed</td>
           </tr>
         </tbody>
       </table>
@@ -750,27 +750,31 @@
     <!-- REF# conflict -->
     <div class="card">
       <h3 id="err-ref-conflict" class="error-anchor">Error: "REF# X already exists on today's sheet"</h3>
-      <p>Staff tried to submit a cashout using a REF# that's already been used on today's sheet.</p>
+      <p>Staff tried to submit a cashout using a REF# that's already been used on today's sheet. A cashout with this
+        REF# was already submitted from another device.</p>
       <div class="callout callout-safe">
-        <h4>What's safe:</h4> The new cashout is stored on the iPad. Nothing was
-        written to the sheet.
+        <h4>What's safe:</h4> The new cashout is stored on the iPad. Nothing was written to the sheet.
       </div>
       <h3>How to figure out what happened</h3>
-      <ol class="steps">
-        <li>Open the master sheet and find today's tab</li>
-        <li>Look at the existing row for that ref# &mdash; does it have the right name(s)?</li>
-      </ol>
+      <p>Ask the staff: <strong>did you type the wrong REF# by mistake?</strong></p>
 
       <div class="callout callout-info" style="margin-top:1rem;">
-        <h4>Case A: Staff typed the wrong ref# (most common)</h4>
-        On the iPad Cashout Log, tap the conflicting entry to select it and view its full data. Then have the staff
-        correct the ref# and resubmit with the right number.
+        <h4>Case A: Entry error (staff typed the wrong REF#)</h4>
+        On the iPad Cashout Log, tap the conflicting entry to view its data. Have the staff correct the REF# in
+        the form and submit with the right number. Done &mdash; cashout lands on the sheet under the corrected REF#.
       </div>
       <div class="callout callout-warn" style="margin-top:0.5rem;">
-        <h4>Case B: The existing cashout genuinely needs to be updated</h4>
-        Confirm with staff they want to overwrite. On the Cashout Log, tap the conflicting entry to select it, then
-        tap <strong>Edit to Resubmit</strong>. This overwrites the existing rows and marks the ref# as
-        <code>X (Resubmitted)</code>. If the split shrank (e.g. 3 people to 2), extra rows are auto-cleared.
+        <h4>Case B: Not an entry error (REF# is correct, another device got there first)</h4>
+        The staff's REF# is correct but the same number was already used on another device today. To get this cashout
+        into the sheet AND flag the duplicate for your review:
+        <ol class="steps" style="margin-top:0.5rem;">
+          <li>Have the staff <strong>resubmit using their REF# repeated 3 times</strong> (e.g. <code>3 &rarr; 333</code>,
+            <code>12 &rarr; 121212</code>)</li>
+          <li>Inform Matt (email or text) that a cross-device REF# conflict occurred</li>
+          <li>Open today's tab in the master sheet and compare the original REF# row with the new tripled-REF# row
+            &mdash; decide which is correct, or if both should be kept under different REF#s, and edit accordingly.
+            See <a href="#err-wrong-reference-number">Wrong Reference Numbers</a> for the full reconcile steps.</li>
+        </ol>
       </div>
     </div>
 
