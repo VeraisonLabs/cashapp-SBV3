@@ -656,13 +656,13 @@
   .backups-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 11px;
+    font-size: 12px;
     table-layout: auto;
   }
   .backups-table th {
     text-align: left;
     font-family: 'Syne', sans-serif;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -683,7 +683,7 @@
   .backups-table tbody tr.older-copy td { color: var(--muted); opacity: 0.55; }
   .backups-table tbody tr.older-copy td .status-badge { opacity: 0.7; }
   .older-copy-label {
-    font-size: 9px;
+    font-size: 10px;
     font-style: italic;
     color: var(--muted);
     margin-left: 4px;
@@ -692,7 +692,7 @@
 
   .status-badge {
     display: inline-block;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 500;
     padding: 2px 6px;
     border-radius: 4px;
@@ -705,7 +705,7 @@
   .status-badge.partial   { background: rgba(240,165,0,0.15);  color: var(--accent); }
   .status-badge.manual    { background: rgba(139,148,158,0.15); color: var(--muted); }
 
-  .msg-cell { font-size: 10px; color: var(--muted); max-width: 140px; }
+  .msg-cell { font-size: 11px; color: var(--muted); max-width: 140px; }
   .err-link {
     color: inherit;
     text-decoration: underline dashed;
@@ -2341,7 +2341,7 @@ function renderBackupsTable() {
       : cleanMsg;
 
     return `<tr onclick="selectBackupRow('${b.cashoutId}', ${idx})" class="${rowClasses}">
-      <td style="white-space:nowrap;font-size:10px;">${b.cashoutId}${olderLabel}</td>
+      <td style="white-space:nowrap;font-size:11px;">${b.cashoutId}${olderLabel}</td>
       <td><span class="status-badge ${statusClass}">${display.status}</span></td>
       <td class="msg-cell">${msgHtml}</td>
       <td>${names}</td>
