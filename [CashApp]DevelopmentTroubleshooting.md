@@ -302,7 +302,7 @@ Matt's contact: `matt@veraisonlabs.com`
 - Server check only runs after the POST reaches Google, so feedback is slightly slower than the client-side check.
 - Needs the iPad to be online; the client-side check is still the only guard that works offline.
 
-**Status:** Not implemented as of 2026-04-14. Single-iPad workflow is the explicit current design; localStorage-only REF# check is sufficient for that. This note exists so future-Claude knows the second-stage option without having to rediscover it.
+**Status:** Not implemented as of 2026-04-14. Single-iPad workflow is the explicit current design; localStorage-only REF# check is sufficient for that. This note exists so future maintainers know the second-stage option without having to rediscover it.
 
 ---
 
@@ -376,15 +376,15 @@ Original design sketch preserved above for historical context — useful when de
 
 | Date | Added by | Change |
 |---|---|---|
-| 2026-04-11 | Matt + Claude | Initial scaffold during v3 build |
-| 2026-04-11 | Matt + Claude | Added "bar cashout resubmit stale bartender entries" known limitation after rewriting the main Apps Script |
-| 2026-04-11 | Matt + Claude | Changed error display rule: reassurance ("Cashout data saved to iPad") now goes at the BOTTOM of the message, not the top. Prevents scan-and-dismiss at 2am. |
-| 2026-04-11 | Matt + Claude | Error messages now NAME the specific artifact ("cashout master sheet", "PM Server Main section", "REF# 42") instead of vague references. Added runbook entries for SECTION_FULL, RESUBMIT_NOT_FOUND, and UNKNOWN_SECTION errors. |
-| 2026-04-11 | Matt + Claude | Added full status/message quick reference table (every possible Backups screen state). Orphan rows from shrinking splits are now auto-cleared instead of left for manual deletion. Approach A locked in: removing no-cors to enable real error reporting. |
-| 2026-04-11 | Matt + Claude | Added backup Apps Script (`sb-backup-apps-script.gs`). Append-only log to `[BackupLog]AllCashouts` sheet. Referenced backup sheet name in troubleshooting doc. |
-| 2026-04-14 | Matt + Claude | Launched `CashApp-Troubleshooting.html` as a second live GitHub Pages URL. Styled header to match the app palette. Added anchor links on the status reference table. |
-| 2026-04-14 | Matt + Claude | Renamed `[CashApp]Troubleshooting.md` → `[CashApp]DevelopmentTroubleshooting.md` to clarify the living-internal-doc vs. stable-client-facing distinction. |
-| 2026-04-14 | Matt + Claude (other session) | Shipped per-row deep links: error messages in the Cashout Log table are now clickable anchors that open the corresponding troubleshooting-guide section. Plus: "View Troubleshooting Guide" button at the top of the log, and "Load into Form" action renamed to "Edit to Resubmit" (commit `f92022f`). |
-| 2026-04-14 | Matt + Claude | Moved the Private Browsing / localStorage warning above Status References so readers can't miss it. Removed the change log section from the client-facing HTML (kept here in the dev doc). |
+| 2026-04-11 | Matt | Initial scaffold during v3 build |
+| 2026-04-11 | Matt | Added "bar cashout resubmit stale bartender entries" known limitation after rewriting the main Apps Script |
+| 2026-04-11 | Matt | Changed error display rule: reassurance ("Cashout data saved to iPad") now goes at the BOTTOM of the message, not the top. Prevents scan-and-dismiss at 2am. |
+| 2026-04-11 | Matt | Error messages now NAME the specific artifact ("cashout master sheet", "PM Server Main section", "REF# 42") instead of vague references. Added runbook entries for SECTION_FULL, RESUBMIT_NOT_FOUND, and UNKNOWN_SECTION errors. |
+| 2026-04-11 | Matt | Added full status/message quick reference table (every possible Backups screen state). Orphan rows from shrinking splits are now auto-cleared instead of left for manual deletion. Approach A locked in: removing no-cors to enable real error reporting. |
+| 2026-04-11 | Matt | Added backup Apps Script (`sb-backup-apps-script.gs`). Append-only log to `[BackupLog]AllCashouts` sheet. Referenced backup sheet name in troubleshooting doc. |
+| 2026-04-14 | Matt | Launched `CashApp-Troubleshooting.html` as a second live GitHub Pages URL. Styled header to match the app palette. Added anchor links on the status reference table. |
+| 2026-04-14 | Matt | Renamed `[CashApp]Troubleshooting.md` → `[CashApp]DevelopmentTroubleshooting.md` to clarify the living-internal-doc vs. stable-client-facing distinction. |
+| 2026-04-14 | Matt | Shipped per-row deep links: error messages in the Cashout Log table are now clickable anchors that open the corresponding troubleshooting-guide section. Plus: "View Troubleshooting Guide" button at the top of the log, and "Load into Form" action renamed to "Edit to Resubmit" (commit `f92022f`). |
+| 2026-04-14 | Matt | Moved the Private Browsing / localStorage warning above Status References so readers can't miss it. Removed the change log section from the client-facing HTML (kept here in the dev doc). |
 
 *Add entries here as you make edits. Keep a paper trail.*
