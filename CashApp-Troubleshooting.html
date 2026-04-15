@@ -392,7 +392,9 @@
         <div class="layer-body">
           <strong>Main Cashout Sheet</strong>
           <span>The normal Google Sheet where cashouts land. Used on a normal day.</span></br>
-          <a href="">View Master Cashout spreadsheet(to be added)</a>
+          <a
+            href="https://docs.google.com/spreadsheets/d/1DQKwjm938StCFjOFijAALU_ApHZAW5krUXoU1_3Usxo/edit?gid=151186436#gid=151186436">Daily
+            Cashout - Master</a>
         </div>
       </div>
       <div class="layer-item">
@@ -559,7 +561,8 @@
         <li>Rename it to exactly <code>&#9888;&#65039; TEMPLATE &mdash; DO NOT DELETE</code> (including the warning
           symbol)</li>
         <li>Right-click it &rarr; <strong>Protect sheet</strong> &rarr; "Only I can edit" &rarr; Save</li>
-        <li>Go to the iPad, open the <strong>Backups screen</strong>, find the cashout, tap <strong>Resubmit</strong>
+        <li>Go to the iPad, open the <strong>Cashout Log</strong>, find the cashout, tap <strong>Edit to
+            Resubmit</strong>
         </li>
         <li>Verify the row appears in today's tab of the master sheet</li>
       </ol>
@@ -577,13 +580,14 @@
       <h3>How to fix</h3>
       <ol class="steps">
         <li>Check that the restaurant's WiFi is actually working (try loading any website on the iPad)</li>
-        <li>Once WiFi is back, open the iPad <strong>Backups screen</strong></li>
-        <li>Find the pending cashout(s) and tap <strong>Resubmit</strong> on each</li>
+        <li>Once WiFi is back, open the iPad <strong>Cashout Log</strong></li>
+        <li>Find the pending cashout(s) and tap <strong>Edit to Resubmit</strong> on each</li>
         <li>Verify they appear in the master sheet</li>
       </ol>
       <div class="callout callout-info">
         <h4>If WiFi stays broken for a while:</h4> Don't worry &mdash; the
-        cashouts stay on the iPad indefinitely. When the iPad finally gets back online, use Resubmit on each pending
+        cashouts stay on the iPad indefinitely. When the iPad finally gets back online, tap each pending entry and use
+        Edit to Resubmit on each
         entry.
       </div>
     </div>
@@ -602,9 +606,10 @@
       <ol class="steps">
         <li>Open the <strong>Backup Sheet</strong> (<code>[BackupLog]AllCashouts</code>) on your desktop to confirm the
           row is there</li>
-        <li>Open the iPad <strong>Backups screen</strong></li>
-        <li>Find the cashout and tap <strong>Resubmit</strong> &mdash; this will retry the main Apps Script</li>
-        <li>If Resubmit still fails, contact Matt with: the Cashout ID shown on the iPad + the date/time + a screenshot
+        <li>Open the iPad <strong>Cashout Log</strong></li>
+        <li>Find the cashout and tap <strong>Edit to Resubmit</strong> &mdash; this will retry the main Apps Script</li>
+        <li>If Edit to Resubmit still fails, contact Matt with: the Cashout ID shown on the iPad + the date/time + a
+          screenshot
           of any error in the Apps Script logs</li>
       </ol>
     </div>
@@ -640,8 +645,8 @@
         <li>Check if Google is having a platform issue: <a href="https://www.google.com/appsstatus/dashboard/"
             target="_blank">Google Workspace Status Dashboard</a></li>
         <li>If Google is down, wait it out &mdash; do NOT manually type cashouts until Google is back</li>
-        <li>Once Google is back, open the iPad <strong>Backups screen</strong></li>
-        <li>Tap <strong>Resubmit</strong> on each pending cashout</li>
+        <li>Once Google is back, open the iPad <strong>Cashout Log</strong></li>
+        <li>Tap <strong>Edit to Resubmit</strong> on each pending cashout</li>
         <li>Verify they all appear in the master sheet</li>
       </ol>
     </div>
@@ -662,14 +667,14 @@
 
       <div class="callout callout-info" style="margin-top:1rem;">
         <h4>Case A: Staff typed the wrong ref# (most common)</h4>
-        Go to the iPad Backups screen, find the pending-conflict entry, tap <strong>View data</strong> to confirm the
-        details, have the staff correct the ref# and resubmit with the right number.
+        On the iPad Cashout Log, tap the conflicting entry to select it and view its full data. Then have the staff
+        correct the ref# and resubmit with the right number.
       </div>
       <div class="callout callout-warn" style="margin-top:0.5rem;">
         <h4>Case B: The existing cashout genuinely needs to be updated</h4>
-        Confirm with staff they want to overwrite. On the Backups screen, find the pending-conflict entry and tap
-        <strong>Resubmit</strong>. This overwrites the existing rows and marks the ref# as <code>X (Resubmitted)</code>.
-        If the split shrank (e.g. 3 people to 2), extra rows are auto-cleared.
+        Confirm with staff they want to overwrite. On the Cashout Log, tap the conflicting entry to select it, then
+        tap <strong>Edit to Resubmit</strong>. This overwrites the existing rows and marks the ref# as
+        <code>X (Resubmitted)</code>. If the split shrank (e.g. 3 people to 2), extra rows are auto-cleared.
       </div>
     </div>
 
@@ -691,7 +696,8 @@
         <li>Scroll to the named section and count the filled rows</li>
         <li>Check for accidental duplicates, test data, or rows that don't belong to today</li>
         <li>Delete any rows that shouldn't be there</li>
-        <li>Go to the iPad <strong>Backups screen</strong>, find the pending cashout, tap <strong>Resubmit</strong></li>
+        <li>Go to the iPad <strong>Cashout Log</strong>, find the pending cashout, tap <strong>Edit to Resubmit</strong>
+        </li>
         <li>If the section is genuinely full, contact Matt &mdash; the section layout may need to be expanded</li>
       </ol>
     </div>
@@ -700,8 +706,10 @@
     <div class="card">
       <h3 id="err-resubmit-not-found" class="error-anchor">Error: "REF# X not found in [Section name], use fresh Submit
         instead"</h3>
-      <p>Someone tapped <strong>Resubmit</strong> but the Apps Script couldn't find any existing rows with that REF# in
-        the named section.</p>
+      <p>Someone tapped <strong>Edit to Resubmit</strong> and submitted, but the Apps Script couldn't find any existing
+        rows with that REF# in the named section to overwrite. The app only sends overwrite mode when the entry's
+        previous submit was recorded as successful, so this error usually means the rows were manually deleted or
+        edited in the sheet after the original submit.</p>
       <div class="callout callout-safe">
         <h4>What's safe:</h4> The cashout is stored on the iPad. Nothing was
         written to the sheet.
@@ -709,13 +717,14 @@
 
       <div class="callout callout-info" style="margin-top:1rem;">
         <h4>Case A: REF# is genuinely missing from the sheet</h4>
-        The original submit never landed. Use a <strong>fresh Submit</strong> instead of Resubmit: go to the Backups
-        screen, tap <strong>View data</strong>, then manually re-enter the cashout using the regular Submit button.
+        The original submit never landed. On the iPad Cashout Log, tap the entry to view its data, then hit the
+        <strong>Edit to Resubmit</strong> button to manually edit and resubmit.
       </div>
       <div class="callout callout-warn" style="margin-top:0.5rem;">
         <h4>Case B: REF# is in the sheet but the resubmit still failed</h4>
         The REF# in the sheet was probably manually edited after the original submit (e.g. someone added
-        <code>(Manual fix)</code>). Undo the manual edit in the sheet if possible, then try Resubmit again.
+        <code>(Manual fix)</code>). Undo the manual edit in the sheet if possible, then tap the entry on the Cashout
+        Log and try <strong>Edit to Resubmit</strong> again.
       </div>
     </div>
 
@@ -780,7 +789,7 @@
         <li>Copy the row data into the correct date's tab (the same rows / section the cashout belongs to)</li>
         <li>Delete the original row(s) from the wrong date's tab</li>
         <li>On the iPad, open the Cashout Log, select the entry, and tap <strong>Mark as Synced</strong> &mdash; not
-          Resubmit. This clears the pending status without sending the row anywhere.</li>
+          Edit to Resubmit. This clears the pending status without sending the row anywhere.</li>
       </ol>
       <p style="font-size:0.9rem; color:var(--gray-500);">Why this isn't automated: the app treats the date the staff
         member entered as the source of truth. Detecting a "wrong date" requires human judgment about what the correct
@@ -809,7 +818,8 @@
           under different REF#s</li>
         <li>Delete or edit whichever row shouldn't be the final record</li>
         <li>If keeping the flagged duplicate as a legitimate cashout, rename its REF# (in column A) from
-          <code>666</code> back to whatever it should actually be</li>
+          <code>666</code> back to whatever it should actually be
+        </li>
       </ol>
       <p style="font-size:0.9rem; color:var(--gray-500);">Why the app can't auto-reconcile: deciding which of two
         conflicting cashouts is correct requires human judgment about what happened during the shift. The app routes
@@ -846,11 +856,11 @@
     <hr>
 
     <!-- ═══════════════════════════════════════════ -->
-    <!-- BACKUPS SCREEN -->
+    <!-- CASHOUT LOG -->
     <!-- ═══════════════════════════════════════════ -->
-    <h2>The iPad Backups Screen</h2>
-    <p>The Backups screen on the iPad is the safety net. Every cashout ever submitted from this iPad is stored there,
-      even ones that successfully made it to the sheet. Each entry shows:</p>
+    <h2>The iPad Cashout Log</h2>
+    <p>The Cashout Log on the iPad is the safety net. Every cashout ever submitted from this iPad is stored there,
+      even ones that successfully made it to the sheet. Each row in the table shows:</p>
 
     <div class="card">
       <p><strong>Cashout ID</strong> &mdash; in the format <code>2026-04-11[REF42]</code></p>
@@ -859,17 +869,26 @@
         <li><span class="badge badge-synced">Synced</span> &mdash; successfully sent to the sheet</li>
         <li><span class="badge badge-pending">Pending</span> &mdash; not yet synced (usually a network or sync error)
         </li>
-        <li><span class="badge badge-conflict">Pending-conflict</span> &mdash; ref# collision detected, requires your
-          review</li>
+        <li><span class="badge badge-conflict">Conflict</span> &mdash; ref# collision detected, requires your review
+        </li>
       </ul>
-      <p><strong>Date, section, names, and final amounts</strong></p>
-      <p style="margin-bottom:0;"><strong>Three action buttons:</strong></p>
+      <p><strong>Message, Names, Section, Shared (people count), and Amount</strong> &mdash; at-a-glance summary
+        columns</p>
+      <p style="margin-bottom:0;"><strong>Tap a row</strong> to select it. The full stored data expands below the
+        table (all form inputs, tip-out breakdown, and per-person split). Two action buttons appear with the
+        expanded view:</p>
       <ul style="margin:0.25rem 0 0 1.2rem;">
-        <li><strong>View data</strong> &mdash; expand to see everything stored for this cashout</li>
-        <li><strong>Resubmit</strong> &mdash; re-send the cashout to both sheets. Safe to tap multiple times.</li>
-        <li><strong>Mark as manually synced</strong> &mdash; if you typed the row into the sheet by hand, tap this to
-          clear the pending status</li>
+        <li><strong>Edit to Resubmit</strong> &mdash; loads the cashout back into the calculator form. If the original
+          submit successfully landed in the sheet, the cashout date is locked and the submit will overwrite those rows
+          (tagged <code>X (Resubmitted)</code>). If the original never landed (network error, pending, etc.), the date
+          stays editable and the submit creates the rows fresh.</li>
+        <li><strong>Mark as Synced</strong> &mdash; for when a cashout was typed into the sheet by hand or reconciled
+          manually; clears the pending status without sending anything.</li>
       </ul>
+      <p style="margin-top:0.75rem; margin-bottom:0; font-size:0.9rem; color:var(--gray-500);">Below those buttons is
+        a small Troubleshooting panel with a <strong>View Troubleshooting Guide</strong> link that opens this page.
+        Error messages in the table itself are also clickable &mdash; tapping an error row's message jumps directly
+        to its specific section in this guide.</p>
     </div>
 
     <hr>
