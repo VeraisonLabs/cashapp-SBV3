@@ -2523,11 +2523,25 @@ function loadFromBackup(entry) {
     toggleSushiTeamHours();
   }
 
-  // 5. Mark this as a resubmit so submitCashout sends isResubmit: true,
-  //    and lock the cashout-date field so the date can't be changed.
-  setResubmitMode(true);
+  // 5. Decide whether this load is a true overwrite or a fresh submit.
+  //    If the original cashout successfully landed in the sheet, we're
+  //    correcting an existing row — send isResubmit=true so Apps Script
+  //    overwrites the matching rows and tags them (Resubmitted).
+  //    If the original never landed (network error, pending, or manual),
+  //    there's nothing in the sheet to overwrite — send isResubmit=false
+  //    so Apps Script creates the rows fresh. This is the critical path
+  //    for recovering cashouts after a WiFi drop.
+  //    Date lock follows the same logic: locked only when overwriting,
+  //    because orphan-record risk only exists when a row already exists.
+  const alreadyLanded = entry.mainStatus === 'success';
+  setResubmitMode(alreadyLanded);
 
-  showToast('Loaded from backup — review and submit', 'success');
+  showToast(
+    alreadyLanded
+      ? 'Loaded for resubmit — will replace the existing cashout'
+      : 'Loaded from backup — ready to submit as fresh',
+    'success'
+  );
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
