@@ -32,8 +32,8 @@
 // To copy a cashout to the master sheet manually: select C:J for the rows
 // you want, paste into A:H of the master sheet's daily tab.
 //
-// For sushi cashouts, columns C-J are blank because the master doesn't
-// write per-person master-row data for sushi. Full data is in column O.
+// For sushi cashouts, columns C-J now mirror the master sheet (per-person
+// rows with suffixed REF#, name, and dueback amount; tip-outs zeroed).
 //
 // SETUP:
 //   1. Set BACKUP_SHEET_ID to the [BackupLog]AllCashouts spreadsheet ID.
@@ -68,6 +68,13 @@ function doPost(e) {
 
     // Build the Cashout ID (matches the format used in the iPad Backups screen)
     // Format: YYYY-MM-DD[REF{nn}] — date first for scanning, REF# in brackets
+    // Apply the same REF# suffix as the main script for backup consistency
+    var suffix = '';
+    if (section === 'PM Sushi') suffix = '-Sushi';
+    else if (section.indexOf('Bar Main') !== -1) suffix = '-MainBar';
+    else if (section.indexOf('Bar Upstairs') !== -1) suffix = '-UpstairsBar';
+    var refNumFull = refNum + suffix;
+
     var cashoutId = cashoutDate + '[REF' + refNum + ']';
     var rawJson = JSON.stringify(data);
     var isSushi = (section === 'PM Sushi');
@@ -95,22 +102,25 @@ function doPost(e) {
     //   N: Submit Type
     //   O: Raw Data (full JSON of entire submission — same in every row of a split)
     //
-    // For sushi cashouts, columns C-J are left BLANK because the master sheet
-    // doesn't write per-person master-row data for sushi (only totalTips to B51).
-    // The full sushi data remains recoverable from column O (Raw Data).
     rows.forEach(function(row) {
+      var isBar = section.indexOf('Bar') !== -1;
+
       if (isSushi) {
+        // Sushi: per-person rows with suffixed REF#, name, dueback; tip-outs zeroed
+        var amt = row.amount || 0;
+        var duebackValue = amt < 0 ? amt : (amt > 0 ? amt : 0);
+
         sheet.appendRow([
           cashoutId,          // A
           names,              // B
-          '',                 // C — REFERENCE # (blank for sushi)
-          '',                 // D — NAME (blank for sushi)
-          '',                 // E — DUEBACK (blank for sushi)
-          '',                 // F — HOUSE (blank for sushi)
-          '',                 // G — BUSSER (blank for sushi)
-          '',                 // H — BAR (blank for sushi)
-          '',                 // I — EXPO (blank for sushi)
-          '',                 // J — EVENTS (blank for sushi)
+          refNumFull,         // C — REFERENCE # (e.g. "45-Sushi")
+          row.name || '',     // D — NAME
+          duebackValue,       // E — DUEBACK
+          0,                  // F — HOUSE
+          0,                  // G — BUSSER
+          0,                  // H — BAR
+          0,                  // I — EXPO
+          0,                  // J — EVENTS
           receivedAt,         // K
           section,            // L
           rows.length,        // M
@@ -121,13 +131,12 @@ function doPost(e) {
         // Server / Bar: compute the master-sheet values using the same conventions
         // as the main Apps Script (dueback sign convention, BAR blank for bar cashouts).
         var duebackValue = (row.owesHouse > 0) ? row.owesHouse : -(row.dueback || 0);
-        var isBar = section.indexOf('Bar') !== -1;
         var barValue = isBar ? '' : (row.bar || 0);
 
         sheet.appendRow([
           cashoutId,          // A
           names,              // B
-          row.refNum || '',   // C — REFERENCE #
+          refNumFull,         // C — REFERENCE # (with suffix for bar)
           row.name || '',     // D — NAME
           duebackValue,       // E — DUEBACK
           row.house || 0,     // F — HOUSE
