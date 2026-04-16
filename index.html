@@ -18,8 +18,8 @@
     --accent2: #e05c2a;
     --green: #3fb950;
     --red: #f85149;
-    --text: #e6edf3;
-    --muted: #8b949e;
+    --text: #f0f3f6;
+    --muted: #a8b1ba;
     --radius: 10px;
   }
 
@@ -2305,7 +2305,10 @@ function toggleBackupsScreen() {
       if (el.id !== 'backupsScreen') el.style.display = '';
     });
     document.getElementById('backupsToggle').textContent = 'Cashout Log';
-    setViewport(VIEWPORT_LOCKED);
+    document.getElementById('refConflictBanner').style.display = 'none';
+    document.getElementById('successBanner').style.display = 'none';
+    document.getElementById('errorBanner').style.display = 'none';
+    setViewport(VIEWPORT_ZOOMABLE);
   } else {
     // Show backups, hide main form elements
     document.querySelectorAll('.container > *').forEach(el => {
