@@ -680,9 +680,9 @@
   .backups-table tr:last-child td { border-bottom: none; }
   .backups-table tr { cursor: pointer; transition: background 0.1s; }
   .backups-table tbody tr:hover { background: var(--surface2); }
-  .backups-table tbody tr.older-copy td { color: var(--muted); opacity: 0.55; }
-  .backups-table tbody tr.older-copy td .status-badge { opacity: 0.7; }
-  .older-copy-label {
+  .backups-table tbody tr.overwritten td { color: var(--muted); opacity: 0.55; }
+  .backups-table tbody tr.overwritten td .status-badge { opacity: 0.7; }
+  .overwritten-label {
     font-size: 10px;
     font-style: italic;
     color: var(--muted);
@@ -740,7 +740,7 @@
     border-color: var(--accent);
     font-weight: 500;
   }
-  .backup-action-btn.resubmit.older-copy {
+  .backup-action-btn.resubmit.overwritten {
     background: transparent;
     color: var(--accent);
     border: 1px dashed var(--accent);
@@ -2275,7 +2275,7 @@ function recalcFromTipouts() {
 
 // ── BACKUPS SCREEN ───────────────────────────────────────────────────────────
 let selectedBackupId = null;
-let selectedBackupIndex = null;  // specific array index, so "older copy" rows select themselves, not the newest with the same id
+let selectedBackupIndex = null;  // specific array index, so "overwritten" rows select themselves, not the newest with the same id
 
 // Viewport strings: form screen locks zoom to prevent accidental pinch during
 // data entry; log screen allows zoom so small table text is readable on phones.
@@ -2339,7 +2339,7 @@ function renderBackupsTable() {
 
   // Track which cashoutIds we've already seen. Backups are newest-first, so the
   // first time we encounter a given cashoutId is the newest attempt; any later
-  // occurrence of the same id is an older copy of the same cashout.
+  // occurrence of the same id is an overwritten of the same cashout.
   const seenIds = new Set();
 
   tbody.innerHTML = backups.map((b, idx) => {
@@ -2363,9 +2363,9 @@ function renderBackupsTable() {
 
     const rowClasses = [
       selectedBackupIndex === idx ? 'selected' : '',
-      isOlderCopy ? 'older-copy' : '',
+      isOlderCopy ? 'overwritten' : '',
     ].filter(Boolean).join(' ');
-    const olderLabel = isOlderCopy ? `<span class="older-copy-label">older copy</span>` : '';
+    const olderLabel = isOlderCopy ? `<span class="overwritten-label">overwritten</span>` : '';
 
     const cleanMsg = display.message.replace(/^Unexpected error:\s*/i, '');
     const msgHtml = display.anchor && cleanMsg
@@ -2393,7 +2393,7 @@ function selectBackupRow(cashoutId, idx) {
   const backups = getBackups();
   const entry = backups[idx];
   const isOlderCopy = backups.findIndex(b => b.cashoutId === cashoutId) !== idx;
-  document.getElementById('backupDetailLabel').textContent = cashoutId + (isOlderCopy ? ' (older copy)' : '');
+  document.getElementById('backupDetailLabel').textContent = cashoutId + (isOlderCopy ? ' (overwritten)' : '');
 
   if (entry) {
     const display = getDisplayStatus(entry);
@@ -2401,9 +2401,9 @@ function selectBackupRow(cashoutId, idx) {
     const syncBtn = document.getElementById('backupMarkSyncedBtn');
     // Load into Form: always available so managers can reload any cashout
     resubBtn.style.display = '';
-    // Relabel + re-color when loading an older copy — makes it harder to trigger by accident
-    resubBtn.textContent = isOlderCopy ? 'Edit Older Copy to Resubmit' : 'Edit to Resubmit';
-    resubBtn.classList.toggle('older-copy', isOlderCopy);
+    // Relabel + re-color when loading an overwritten — makes it harder to trigger by accident
+    resubBtn.textContent = isOlderCopy ? 'Edit Overwritten to Resubmit' : 'Edit to Resubmit';
+    resubBtn.classList.toggle('overwritten', isOlderCopy);
     // Mark as Synced: hidden if already synced (action has no meaning)
     syncBtn.style.display = display.status === 'Synced' ? 'none' : '';
     renderBackupQuickView(entry);
@@ -2490,15 +2490,15 @@ function resubmitFromBackup() {
     return;
   }
 
-  // Guard: if this is an older copy (a newer attempt for the same cashoutId exists),
+  // Guard: if this is an overwritten (a newer attempt for the same cashoutId exists),
   // require explicit confirmation so a manager can't resubmit a stale version by mistake.
   const isOlderCopy = backups.findIndex(b => b.cashoutId === entry.cashoutId) !== selectedBackupIndex;
   if (isOlderCopy) {
     const ok = confirm(
       DESKTOP_DIALOG_WARNING +
-      'This is an OLDER copy of ' + entry.cashoutId + '.\n\n' +
-      'A newer attempt for the same cashout exists. Loading this one will overwrite the newer attempt when submitted.\n\n' +
-      'Continue anyway?'
+      'This cashout (' + entry.cashoutId + ') was overwritten by a newer submission.\n\n' +
+      'Loading this version will replace the current entry when submitted.\n\n' +
+      'Continue?'
     );
     if (!ok) return;
   }
