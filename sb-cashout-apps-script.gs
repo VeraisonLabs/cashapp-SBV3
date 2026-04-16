@@ -290,14 +290,7 @@ function writeDataRow(sheet, targetRow, row, isResubmitted) {
 // constraint of the spreadsheet design, not a choice.
 function writeSushiTips(sheet, tipRow, totalTips, isResubmit) {
   if (totalTips == null) return;
-  var cell = sheet.getRange(tipRow, 2);  // Column B
-  if (isResubmit) {
-    cell.setValue(totalTips);
-    return;
-  }
-  if (cell.getValue() === '' || cell.getValue() === 0 || cell.getValue() == null) {
-    cell.setValue(totalTips);
-  }
+  sheet.getRange(tipRow, 2).setValue(totalTips);
 }
 
 // ── Bartender row: write name (col B) and hours (col C) to next empty row ────
