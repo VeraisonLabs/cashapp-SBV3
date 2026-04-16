@@ -289,7 +289,7 @@ function writeDataRow(sheet, targetRow, row, isResubmitted) {
 // only stores a single totalTips number, not individual REF#s. This is a hard
 // constraint of the spreadsheet design, not a choice.
 function writeSushiTips(sheet, tipRow, totalTips, isResubmit) {
-  if (!totalTips || totalTips <= 0) return;
+  if (totalTips == null) return;
   var cell = sheet.getRange(tipRow, 2);  // Column B
   if (isResubmit) {
     cell.setValue(totalTips);
