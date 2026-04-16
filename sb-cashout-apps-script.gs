@@ -59,8 +59,15 @@ const SECTION_MAP = {
   'PM Server Upstairs': { dataStart: 38, dataEnd: 43,  bartRows: null        },
   'PM Bar Main':        { dataStart: 21, dataEnd: 36,  bartRows: [77, 81]    },
   'PM Bar Upstairs':    { dataStart: 38, dataEnd: 43,  bartRows: [83, 84]    },
-  'PM Sushi':           { sushiTipsRow: 51                                   },
+  'PM Sushi':           { dataStart: 21, dataEnd: 36,  bartRows: null, sushiTipsRow: 51 },
 };
+
+function getRefSuffix(section) {
+  if (section === 'PM Sushi') return '-Sushi';
+  if (section.includes('Bar Main')) return '-MainBar';
+  if (section.includes('Bar Upstairs')) return '-UpstairsBar';
+  return '';
+}
 
 // ── Entry point ───────────────────────────────────────────────────────────────
 function doPost(e) {
@@ -73,10 +80,15 @@ function doPost(e) {
 
     const cashoutDate = rows[0].cashoutDate;  // 'YYYY-MM-DD'
     const section     = rows[0].section;
-    const refNum      = String(rows[0].refNum || '').trim();
+    const refNumRaw   = String(rows[0].refNum || '').trim();
+    const suffix      = getRefSuffix(section);
+    const refNum      = refNumRaw + suffix;
     const config      = SECTION_MAP[section];
 
     if (!config) throw new Error('UNKNOWN_SECTION: ' + section);
+
+    // Apply REF# suffix to every row so writeDataRow picks it up
+    rows.forEach(function(row) { row.refNum = refNum; });
 
     // ── Serialize all writes to prevent races ────────────────────────────────
     // Covers both the getOrCreateDailyTab race and the nextEmptyRow race that
@@ -87,13 +99,21 @@ function doPost(e) {
       const ss  = SpreadsheetApp.openById(MASTER_SHEET_ID);
       const tab = getOrCreateDailyTab(ss, cashoutDate);
 
-      // ── Sushi: special path — only writes to B51, no row-based logic ─────
+      // ── Sushi: write negated totalTips to B51, then fall through to
+      //    per-person row logic (shares PM Main's row range) ────────────────
       if (config.sushiTipsRow) {
-        writeSushiTips(tab, config.sushiTipsRow, rows[0].totalTips, isResubmit);
-        return successResponse(rows.length + ' row(s) recorded (sushi)', ss);
+        writeSushiTips(tab, config.sushiTipsRow, -(rows[0].totalTips || 0));
+        // Transform sushi rows to match server/bar format for writeDataRow
+        rows.forEach(function(row) {
+          var amt = row.amount || 0;
+          row.dueback   = amt < 0 ? Math.abs(amt) : 0;
+          row.owesHouse = amt > 0 ? amt : 0;
+          row.house = 0;  row.busser = 0;  row.bar = 0;
+          row.expo  = 0;  row.events = 0;
+        });
       }
 
-      // ── Server / Bar: find existing rows for this ref# in this section ───
+      // ── Find existing rows for this ref# in this section ─────────────────
       const existingRows = findRowsForRefNum(tab, config.dataStart, config.dataEnd, refNum);
 
       if (isResubmit) {
@@ -165,12 +185,11 @@ function getOrCreateDailyTab(ss, cashoutDate) {
 }
 
 // ── Find rows where column A matches the given ref# ─────────────────────────
-// Match logic: extract first word from column A (handles both plain "42" and
-// tagged "42 (Resubmitted)" patterns), compare as number so "1" doesn't match
-// "10" or "11". Returns absolute row numbers within the sheet.
+// Match logic: extract first word from column A (strips " (Resubmitted)" tag),
+// compare as string so suffixed refs like "45-Sushi" don't collide with "45".
 function findRowsForRefNum(sheet, startRow, endRow, refNum) {
-  const target = parseInt(refNum, 10);
-  if (isNaN(target)) return [];
+  const target = String(refNum).trim();
+  if (!target) return [];
 
   const range  = sheet.getRange(startRow, 1, endRow - startRow + 1, 1);
   const values = range.getValues();
@@ -180,8 +199,7 @@ function findRowsForRefNum(sheet, startRow, endRow, refNum) {
     var cellVal = values[i][0];
     if (cellVal === '' || cellVal == null) continue;
     var firstWord = String(cellVal).split(' ')[0];
-    var num = parseInt(firstWord, 10);
-    if (!isNaN(num) && num === target) {
+    if (firstWord === target) {
       found.push(startRow + i);
     }
   }
@@ -281,14 +299,10 @@ function writeDataRow(sheet, targetRow, row, isResubmitted) {
   ]]);
 }
 
-// ── Sushi: write total tips to B{row} ────────────────────────────────────────
-// Fresh submit: only writes if the cell is currently empty (preserves v2 behavior
-// where a second sushi person's submit is silently merged).
-// Resubmit: forces the overwrite regardless of current value.
-// Note: sushi does not support REF# conflict detection because the sheet layout
-// only stores a single totalTips number, not individual REF#s. This is a hard
-// constraint of the spreadsheet design, not a choice.
-function writeSushiTips(sheet, tipRow, totalTips, isResubmit) {
+// ── Sushi: write total tips (negated) to B{row} ─────────────────────────────
+// Value is pre-negated by doPost so the spreadsheet formula D48-B51 works
+// correctly for both duebacks and owes-house scenarios.
+function writeSushiTips(sheet, tipRow, totalTips) {
   if (totalTips == null) return;
   sheet.getRange(tipRow, 2).setValue(totalTips);
 }
@@ -384,16 +398,36 @@ function testSubmission() {
     }],
   });
 
-  // Test 4: sushi cashout
+  // Test 4: sushi cashout (2 bar + 1 sushi, dueback)
   runOneTest('Test 4 — sushi (REF 45)', {
     isResubmit: false,
     rows: [{
       cashoutDate: TEST_DATE,
       section:     'PM Sushi',
       refNum:      '45',
-      name:        'Kenji',
+      name:        'Alex',
+      team:        'Bar',
       isFirst:     true,
-      totalTips:   320,
+      totalTips:   -100,
+      amount:      -25,
+    },{
+      cashoutDate: TEST_DATE,
+      section:     'PM Sushi',
+      refNum:      '45',
+      name:        'Jordan',
+      team:        'Bar',
+      isFirst:     false,
+      totalTips:   -100,
+      amount:      -25,
+    },{
+      cashoutDate: TEST_DATE,
+      section:     'PM Sushi',
+      refNum:      '45',
+      name:        'Sam',
+      team:        'Sushi',
+      isFirst:     false,
+      totalTips:   -100,
+      amount:      -50,
     }],
   });
 
