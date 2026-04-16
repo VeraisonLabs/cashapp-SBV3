@@ -1262,6 +1262,14 @@ function setResubmitMode(on) {
   if (lockEl) lockEl.style.display = on ? 'block' : 'none';
 }
 
+function resetSubmitButton() {
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = false;
+  btn.textContent = 'Submit Cashout';
+  btn.style.opacity = '';
+  btn.style.pointerEvents = '';
+}
+
 // ── ERROR CODE → DISPLAY MESSAGE DICTIONARY ──────────────────────────────────
 // Apps Script throws short stable codes. The iPad translates them here.
 // Problem-first, reassurance-last. Staff reads the problem, tells the manager.
@@ -1707,6 +1715,7 @@ function calculate() {
     });
 
     calcData = { cashoutDate, refNum, section, isSushiType: true, barPersons, sushiPersons, totalTips, barTotal, sushiTotal };
+    resetSubmitButton();
     document.getElementById('results').style.display = 'block';
     document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
     return;
@@ -1741,10 +1750,7 @@ function calculate() {
   const totalTipOut  = roundHalfUp(house + busser + bar + expo + events);
   const finalAmount  = roundHalfUp(netCash + totalTipOut);
 
-  // Reset submit button text (in case a previous run had custom amounts)
-  const submitBtn = document.getElementById('submitBtn');
-  submitBtn.disabled = false;
-  submitBtn.textContent = 'Submit Cashout';
+  resetSubmitButton();
 
   // Tip-out display
   document.getElementById('tipOutLabel').style.display   = 'block';
@@ -1844,6 +1850,10 @@ function calculate() {
 // ── SUBMIT ────────────────────────────────────────────────────────────────────
 async function submitCashout(isResubmit) {
   if (!calcData) { showToast('Calculate first', 'error'); return; }
+  if (isResubmit) {
+    const ok = confirm('This will replace the previous cashout for this Reference #.\n\nContinue?');
+    if (!ok) return;
+  }
   const btn = document.getElementById('submitBtn');
   btn.disabled = true;
   btn.textContent = 'Submitting…';
@@ -2502,6 +2512,12 @@ function resubmitFromBackup() {
 
 function loadFromBackup(entry) {
   const fi = entry.formInputs;
+
+  // Clear any leftover state from the previous submit
+  document.getElementById('successBanner').style.display = 'none';
+  document.getElementById('errorBanner').style.display = 'none';
+  document.getElementById('refConflictBanner').style.display = 'none';
+  resetSubmitButton();
 
   // 1. Set the section dropdown first — this triggers the change handler
   //    which shows/hides the right conditional fields
