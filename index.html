@@ -157,6 +157,96 @@
   .field select:focus { border-color: var(--accent); }
 
   .field input.error { border-color: var(--red); }
+
+  /* ── Section picker (two-step: shift → type) ─────────────────────────── */
+  .section-grid { display: flex; flex-direction: column; gap: 28px; }
+  .shift-picker {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+  }
+  .shift-btn {
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 800;
+    padding: 16px;
+    cursor: pointer;
+    text-align: center;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .shift-btn:active { transform: scale(0.97); }
+  .shift-btn.active {
+    border-color: #c45bdb;
+    background: rgba(196,91,219,0.2);
+    color: #d580eb;
+  }
+  .type-picker { display: flex; flex-direction: column; gap: 28px; }
+  .type-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+    max-width: 80%;
+    margin: 0 auto;
+    width: 100%;
+  }
+  .type-row.sushi-row {
+    grid-template-columns: 1fr;
+    max-width: 50%;
+    margin: 0 auto;
+    width: 100%;
+  }
+  .section-btn {
+    background: var(--surface2);
+    border: 2px solid transparent;
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 18px 8px;
+    cursor: pointer;
+    text-align: center;
+    line-height: 1.3;
+    transition: border-color 0.15s, background 0.15s, transform 0.1s;
+  }
+  .section-btn:active { transform: scale(0.97); }
+  .section-btn.server {
+    border-color: var(--accent);
+    background: rgba(240,165,0,0.08);
+  }
+  .section-btn.server:active { background: rgba(240,165,0,0.2); }
+  .section-btn.server.active {
+    border-color: var(--accent);
+    background: rgba(240,165,0,0.35);
+    box-shadow: 0 0 16px rgba(240,165,0,0.45);
+    border-width: 3px;
+  }
+  .section-btn.bar {
+    border-color: #2980b9;
+    background: rgba(41,128,185,0.08);
+  }
+  .section-btn.bar:active { background: rgba(41,128,185,0.2); }
+  .section-btn.bar.active {
+    border-color: #2980b9;
+    background: rgba(41,128,185,0.35);
+    box-shadow: 0 0 16px rgba(41,128,185,0.45);
+    border-width: 3px;
+  }
+  .section-btn.sushi {
+    border-color: var(--green);
+    background: rgba(63,185,80,0.08);
+  }
+  .section-btn.sushi:active { background: rgba(63,185,80,0.2); }
+  .section-btn.sushi.active {
+    border-color: var(--green);
+    background: rgba(63,185,80,0.35);
+    box-shadow: 0 0 16px rgba(63,185,80,0.45);
+    border-width: 3px;
+  }
   .field select.error { border-color: var(--red); }
 
   /* Dollar prefix wrapper */
@@ -658,14 +748,21 @@
   .backups-toggle:hover { border-color: var(--accent); color: var(--accent); }
   .backups-toggle.has-pending { border-color: var(--red); color: var(--red); }
 
-  #backupsScreen { display: none; }
+  #backupsScreen { display: none; padding: 0 16px; }
 
+  .backups-table-wrap {
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: calc(12 * 44px + 38px);
+    -webkit-overflow-scrolling: touch;
+  }
   .backups-table {
     width: 100%;
     border-collapse: collapse;
     font-size: 12px;
     table-layout: auto;
   }
+  .backups-table thead th { position: sticky; top: 0; background: var(--surface); z-index: 1; }
   .backups-table th {
     text-align: left;
     font-family: 'Syne', sans-serif;
@@ -945,7 +1042,7 @@
     </div>
     <div class="field">
       <label>CASHOUT TYPE</label>
-      <select id="section">
+      <select id="section" style="display:none;">
         <option value="">— select —</option>
         <optgroup label="AM">
           <option value="AM Server Main">AM · Server Main</option>
@@ -961,6 +1058,25 @@
           <option value="PM Sushi">PM · Sushi</option>
         </optgroup>
       </select>
+      <div class="section-grid" id="sectionGrid">
+        <div class="shift-picker" id="shiftPicker">
+          <button type="button" class="shift-btn" data-shift="AM" onclick="selectShift('AM')">AM</button>
+          <button type="button" class="shift-btn" data-shift="PM" onclick="selectShift('PM')">PM</button>
+        </div>
+        <div class="type-picker" id="typePicker" style="display:none;">
+          <div class="type-row">
+            <button type="button" class="section-btn server" data-role="Server Upstairs" onclick="selectType(this)">Server Upstairs</button>
+            <button type="button" class="section-btn bar" data-role="Bar Upstairs" onclick="selectType(this)">Bar Upstairs</button>
+          </div>
+          <div class="type-row">
+            <button type="button" class="section-btn server" data-role="Server Main" onclick="selectType(this)">Server Main</button>
+            <button type="button" class="section-btn bar" data-role="Bar Main" onclick="selectType(this)">Bar Main</button>
+          </div>
+          <div class="type-row sushi-row" id="sushiRow" style="display:none;">
+            <button type="button" class="section-btn sushi" data-role="Sushi" onclick="selectType(this)">Sushi</button>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="field" id="namesField">
       <label id="namesLabel">NAME(S) - individual or comma-separated</label>
@@ -1101,6 +1217,7 @@
 
     <div class="section-label" id="tipOutLabel">Tip-Out Breakdown</div>
     <div class="result-card" id="tipOutCard">
+      <div id="resultSectionType" style="display:none;text-align:center;font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--green);padding:10px 0;margin-bottom:10px;border-bottom:1px solid var(--border);letter-spacing:0.03em;"></div>
       <div class="result-row">
         <span class="label">House (3.5%)</span>
         <input type="number" class="tipout-input accent" id="r_house" step="0.01" min="0" placeholder="0.00">
@@ -1130,6 +1247,7 @@
     <!-- Sushi: Tip Distribution card -->
     <div id="sushiDistCard" style="display:none;">
       <div class="result-card">
+        <div id="resultSectionTypeSushi" style="display:none;text-align:center;font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--green);padding:10px 0;margin-bottom:10px;border-bottom:1px solid var(--border);letter-spacing:0.03em;"></div>
         <div class="result-row">
           <span class="label">Total Cash Due (Net Cash)</span>
           <span class="value accent" id="r_totalTips">—</span>
@@ -1182,21 +1300,23 @@
   <!-- BACKUPS SCREEN -->
   <div id="backupsScreen">
     <div class="section-label">Cashout Backup Log</div>
-    <div class="card" style="overflow-x:auto;">
-      <table class="backups-table">
-        <thead>
-          <tr>
-            <th>Cashout ID</th>
-            <th>Status</th>
-            <th>Message</th>
-            <th>Names</th>
-            <th>Type</th>
-            <th>Shared</th>
-            <th>Amount</th>
-          </tr>
-        </thead>
-        <tbody id="backupsTableBody"></tbody>
-      </table>
+    <div class="card">
+      <div class="backups-table-wrap">
+        <table class="backups-table">
+          <thead>
+            <tr>
+              <th>Cashout ID</th>
+              <th>Status</th>
+              <th>Message</th>
+              <th>Names</th>
+              <th>Type</th>
+              <th>Shared</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody id="backupsTableBody"></tbody>
+        </table>
+      </div>
       <div id="backupsEmpty" style="padding:24px;text-align:center;color:var(--muted);font-size:13px;display:none;">
         No cashouts stored on this iPad yet.
       </div>
@@ -1439,6 +1559,46 @@ function showToast(msg, type = 'success') {
   setTimeout(() => t.classList.remove('show'), 3000);
 }
 
+// ── SECTION PICKER (two-step: shift → type) ──────────────────────────────────
+let selectedShift = '';
+
+function selectShift(shift) {
+  selectedShift = shift;
+  document.querySelectorAll('.shift-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.shift === shift);
+  });
+  document.getElementById('typePicker').style.display = 'flex';
+  document.getElementById('sushiRow').style.display = shift === 'PM' ? 'grid' : 'none';
+  document.querySelectorAll('.section-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('section').value = '';
+}
+
+function selectType(btn) {
+  document.querySelectorAll('.section-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const role = btn.dataset.role;
+  const val = (role === 'Sushi') ? 'PM Sushi' : selectedShift + ' ' + role;
+  document.getElementById('section').value = val;
+  document.getElementById('section').dispatchEvent(new Event('change'));
+}
+
+function syncSectionGrid() {
+  const val = document.getElementById('section').value;
+  if (!val) {
+    selectedShift = '';
+    document.querySelectorAll('.shift-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('typePicker').style.display = 'none';
+    return;
+  }
+  const shift = val.startsWith('AM') ? 'AM' : 'PM';
+  selectShift(shift);
+  document.querySelectorAll('.section-btn').forEach(b => {
+    const role = b.dataset.role;
+    const fullVal = (role === 'Sushi') ? 'PM Sushi' : shift + ' ' + role;
+    b.classList.toggle('active', fullVal === val);
+  });
+}
+
 // ── SECTION CHANGE ────────────────────────────────────────────────────────────
 document.getElementById('section').addEventListener('change', function () {
   const val     = this.value;
@@ -1671,6 +1831,9 @@ function calculate() {
     // Display
     document.getElementById('tipOutLabel').style.display    = 'none';
     document.getElementById('tipOutCard').style.display     = 'none';
+    document.getElementById('resultSectionType').style.display = 'none';
+    document.getElementById('resultSectionTypeSushi').textContent = section.replace(/ /g, ' - ');
+    document.getElementById('resultSectionTypeSushi').style.display = 'block';
     document.getElementById('sushiDistCard').style.display  = 'block';
     document.getElementById('r_totalTips').textContent  = fmt(totalTips);
     document.getElementById('r_barTotal').textContent   = fmt(barTotal);
@@ -1763,6 +1926,8 @@ function calculate() {
 
   // Tip-out display
   document.getElementById('tipOutLabel').style.display   = 'block';
+  document.getElementById('resultSectionType').textContent = section.replace(/ /g, ' - ');
+  document.getElementById('resultSectionType').style.display = 'block';
   document.getElementById('tipOutCard').style.display    = 'block';
   document.getElementById('sushiDistCard').style.display = 'none';
   document.getElementById('r_house').value  = house.toFixed(2);
@@ -2033,7 +2198,10 @@ function resetForm() {
     .toLocaleDateString('en-CA', { timeZone: 'America/Vancouver' });
 
   document.getElementById('section').value = '';
+  syncSectionGrid();
   document.getElementById('results').style.display = 'none';
+  document.getElementById('resultSectionType').style.display = 'none';
+  document.getElementById('resultSectionTypeSushi').style.display = 'none';
   const sb = document.getElementById('submitBtn');
   sb.disabled = false;
   sb.textContent = 'Submit Cashout';
@@ -2535,6 +2703,7 @@ function loadFromBackup(entry) {
   //    which shows/hides the right conditional fields
   document.getElementById('section').value = fi.section || '';
   document.getElementById('section').dispatchEvent(new Event('change'));
+  syncSectionGrid();
 
   // 2. Now populate the fields that the change handler made visible
   document.getElementById('cashoutDate').value = fi.cashoutDate || '';
