@@ -59,7 +59,7 @@ const SECTION_MAP = {
   'PM Server Upstairs': { dataStart: 38, dataEnd: 43,  bartRows: null        },
   'PM Bar Main':        { dataStart: 21, dataEnd: 36,  bartRows: [77, 81]    },
   'PM Bar Upstairs':    { dataStart: 38, dataEnd: 43,  bartRows: [83, 84]    },
-  'PM Sushi':           { dataStart: 21, dataEnd: 36,  bartRows: null, sushiTipsRow: 51 },
+  'PM Sushi':           { dataStart: 21, dataEnd: 36,  bartRows: null                   },
 };
 
 function getRefSuffix(section) {
@@ -99,11 +99,9 @@ function doPost(e) {
       const ss  = SpreadsheetApp.openById(MASTER_SHEET_ID);
       const tab = getOrCreateDailyTab(ss, cashoutDate);
 
-      // ── Sushi: write negated totalTips to B51, then fall through to
-      //    per-person row logic (shares PM Main's row range) ────────────────
-      if (config.sushiTipsRow) {
-        writeSushiTips(tab, config.sushiTipsRow, -(rows[0].totalTips || 0));
-        // Transform sushi rows to match server/bar format for writeDataRow
+      // ── Sushi: transform rows to match server/bar format, then fall
+      //    through to per-person row logic (shares PM Main's row range) ─────
+      if (section === 'PM Sushi') {
         rows.forEach(function(row) {
           var amt = row.amount || 0;
           row.dueback   = amt < 0 ? Math.abs(amt) : 0;
@@ -297,14 +295,6 @@ function writeDataRow(sheet, targetRow, row, isResubmitted) {
     row.expo  || 0,     // G — EXPO       (1.5% of food sales)
     row.events || 0,    // H — EVENTS     (1% of BEO sales)
   ]]);
-}
-
-// ── Sushi: write total tips (negated) to B{row} ─────────────────────────────
-// Value is pre-negated by doPost so the spreadsheet formula D48-B51 works
-// correctly for both duebacks and owes-house scenarios.
-function writeSushiTips(sheet, tipRow, totalTips) {
-  if (totalTips == null) return;
-  sheet.getRange(tipRow, 2).setValue(totalTips);
 }
 
 // ── Bartender row: write name (col B) and hours (col C) to next empty row ────

@@ -131,12 +131,18 @@
     appearance: none;
   }
 
+  .field input[type="date"] {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23f0a500' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2'/%3E%3Cline x1='16' y1='2' x2='16' y2='6'/%3E%3Cline x1='8' y1='2' x2='8' y2='6'/%3E%3Cline x1='3' y1='10' x2='21' y2='10'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 20px 20px;
+    padding-right: 40px;
+  }
   .field input[type="date"]::-webkit-calendar-picker-indicator {
-    /* Approximates var(--accent) #f0a500 */
-    filter: brightness(0) saturate(100%) invert(65%) sepia(88%) saturate(460%) hue-rotate(5deg) brightness(88%);
+    opacity: 0;
+    width: 20px;
+    height: 20px;
     cursor: pointer;
-    width: 22px;
-    height: 22px;
   }
 
   .field select {
@@ -458,6 +464,7 @@
     color: var(--accent);
   }
   .custom-hours-grid input.hrs-input::placeholder { color: rgba(240,165,0,0.4); }
+  #names::placeholder, #sushiNames::placeholder { opacity: 0.35; }
 
   .add-member-btn {
     width: 100%;
@@ -956,12 +963,13 @@
       </select>
     </div>
     <div class="field" id="namesField">
-      <label id="namesLabel">NAME(S) <span style="color:var(--muted);font-size:10px;font-weight:400">— multiple = equal split unless customized below</span></label>
-      <input type="text" id="names" placeholder="single name or comma-separated for split" autocomplete="off">
+      <label id="namesLabel">NAME(S) - individual or comma-separated</label>
+      <input type="text" id="names" placeholder="Name1, Name2, etc." autocomplete="off">
+      <div id="namesHint" style="color:var(--muted);font-size:10px;font-weight:400;margin-top:4px;">Equal split unless customized below</div>
     </div>
     <div class="field" id="sushiNamesField" style="display:none;">
       <label>SUSHI TEAM - NAME(S)</label>
-      <input type="text" id="sushiNames" placeholder="single name or comma-separated for split" autocomplete="off">
+      <input type="text" id="sushiNames" placeholder="Name1, Name2, etc." autocomplete="off">
     </div>
   </div>
 
@@ -1440,7 +1448,8 @@ document.getElementById('section').addEventListener('change', function () {
   // Dynamic names label
   document.getElementById('namesLabel').innerHTML = isSushi
     ? 'BAR TEAM - NAME(S)'
-    : 'NAME(S) <span style="color:var(--muted);font-size:10px;font-weight:400">— multiple = equal split unless customized below</span>';
+    : 'NAME(S) - individual or comma-separated';
+  document.getElementById('namesHint').style.display = isSushi ? 'none' : 'block';
 
   // Sushi second names field
   document.getElementById('sushiNamesField').style.display = isSushi ? 'block' : 'none';
@@ -1672,7 +1681,7 @@ function calculate() {
     const sushiBanner = document.getElementById('cashoutBanner');
     sushiBanner.className = 'cashout-banner ' + (isDuebackSushi ? 'dueback' : 'owe');
     document.getElementById('bannerAmount').textContent = isDuebackSushi
-      ? `Dueback: -$${Math.abs(totalTips).toFixed(2)}`
+      ? `Due: -$${Math.abs(totalTips).toFixed(2)}`
       : `Submit: $${totalTips.toFixed(2)}`;
     document.getElementById('bannerSub').textContent = '';
     document.getElementById('singleResult').style.display = 'block';
@@ -1692,7 +1701,7 @@ function calculate() {
             <span class="share-pct">${pct}% share${hoursNote}</span>
           </div>
           <div class="cashout-banner ${isDueback ? 'dueback' : 'owe'}" style="border-radius:0;margin:0;border:none;border-top:1px solid var(--border)">
-            <div class="banner-amount">${isDueback ? `Dueback: -$${Math.abs(p.amount).toFixed(2)}` : `Submit: $${p.amount.toFixed(2)}`}</div>
+            <div class="banner-amount">${isDueback ? `Due: -$${Math.abs(p.amount).toFixed(2)}` : `Submit: $${p.amount.toFixed(2)}`}</div>
           </div>
         </div>`;
     });
@@ -1709,7 +1718,7 @@ function calculate() {
             <span class="share-pct">${pct}% share${hoursNote}</span>
           </div>
           <div class="cashout-banner ${isDueback ? 'dueback' : 'owe'}" style="border-radius:0;margin:0;border:none;border-top:1px solid var(--border)">
-            <div class="banner-amount">${isDueback ? `Dueback: -$${Math.abs(p.amount).toFixed(2)}` : `Submit: $${p.amount.toFixed(2)}`}</div>
+            <div class="banner-amount">${isDueback ? `Due: -$${Math.abs(p.amount).toFixed(2)}` : `Submit: $${p.amount.toFixed(2)}`}</div>
           </div>
         </div>`;
     });
@@ -1813,7 +1822,7 @@ function calculate() {
     const isDueback = finalAmount < 0;
     banner.className = 'cashout-banner ' + (isDueback ? 'dueback' : 'owe');
     document.getElementById('bannerAmount').textContent = isDueback
-      ? `Dueback: -$${Math.abs(finalAmount).toFixed(2)}`
+      ? `Due: -$${Math.abs(finalAmount).toFixed(2)}`
       : `Submit: $${finalAmount.toFixed(2)}`;
     const netCashFmt = netCash < 0 ? `-$${Math.abs(netCash).toFixed(2)}` : `$${netCash.toFixed(2)}`;
     document.getElementById('bannerSub').textContent = `(tip-out $${totalTipOut.toFixed(2)} + Net cash ${netCashFmt})`;
@@ -1832,7 +1841,7 @@ function calculate() {
             <span class="share-pct">${pct}% share${hoursNote}</span>
           </div>
           <div class="cashout-banner ${isDueback ? 'dueback' : 'owe'}" style="border-radius:0;margin:0;border:none;border-top:1px solid var(--border)">
-            <div class="banner-amount">${isDueback ? `Dueback: -$${Math.abs(p.finalAmount).toFixed(2)}` : `Submit: $${p.finalAmount.toFixed(2)}`}</div>
+            <div class="banner-amount">${isDueback ? `Due: -$${Math.abs(p.finalAmount).toFixed(2)}` : `Submit: $${p.finalAmount.toFixed(2)}`}</div>
           </div>
         </div>`;
     });
@@ -2249,7 +2258,7 @@ function recalcFromTipouts() {
     const isDueback = finalAmount < 0;
     document.getElementById('cashoutBanner').className = 'cashout-banner ' + (isDueback ? 'dueback' : 'owe');
     document.getElementById('bannerAmount').textContent = isDueback
-      ? `Dueback: -$${Math.abs(finalAmount).toFixed(2)}`
+      ? `Due: -$${Math.abs(finalAmount).toFixed(2)}`
       : `Submit: $${finalAmount.toFixed(2)}`;
     document.getElementById('bannerSub').textContent = `(tip-out $${totalTipOut.toFixed(2)} + Net cash ${netCashFmt})`;
   } else {
@@ -2266,7 +2275,7 @@ function recalcFromTipouts() {
             <span class="share-pct">${pct}% share${hoursNote}</span>
           </div>
           <div class="cashout-banner ${isDueback ? 'dueback' : 'owe'}" style="border-radius:0;margin:0;border:none;border-top:1px solid var(--border)">
-            <div class="banner-amount">${isDueback ? `Dueback: -$${Math.abs(p.finalAmount).toFixed(2)}` : `Submit: $${p.finalAmount.toFixed(2)}`}</div>
+            <div class="banner-amount">${isDueback ? `Due: -$${Math.abs(p.finalAmount).toFixed(2)}` : `Submit: $${p.finalAmount.toFixed(2)}`}</div>
           </div>
         </div>`;
     });
@@ -2537,13 +2546,12 @@ function loadFromBackup(entry) {
   document.getElementById('foodSales').value = fi.foodSales || '';
   document.getElementById('beoSales').value = fi.beoSales || '';
 
-  // 3. Restore the net cash sign toggle
-  if (fi.netCashNegative !== undefined) {
-    netCashNegative = fi.netCashNegative;
-    const signBtn = document.getElementById('netCashSignBtn');
-    signBtn.textContent = netCashNegative ? '−' : '+';
-    netCashNegative ? signBtn.classList.remove('positive') : signBtn.classList.add('positive');
-  }
+  // 3. Restore the net cash sign toggle (always runs — the section change
+  //    handler above resets to negative, so we must re-apply the saved value)
+  netCashNegative = fi.netCashNegative !== false;
+  const signBtn = document.getElementById('netCashSignBtn');
+  signBtn.textContent = netCashNegative ? '−' : '+';
+  netCashNegative ? signBtn.classList.remove('positive') : signBtn.classList.add('positive');
 
   // 4. Restore split type checkboxes and types
   if (fi.serverSplitOn) {
