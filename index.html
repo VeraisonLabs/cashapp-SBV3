@@ -1463,7 +1463,7 @@ function addBackupEntry(formInputs, calcResult, rows, isResubmit) {
   };
   backups.unshift(entry);  // newest first
   // Keep last 200 entries to avoid filling localStorage
-  if (backups.length > 200) backups.length = 200;
+  if (backups.length > 100) backups.length = 100;
   saveBackups(backups);
   return backups.length - 1;  // not used currently, but available
 }
@@ -2611,6 +2611,7 @@ function renderBackupQuickView(entry) {
   const parts = [];
   parts.push(row('Submitted', entry.timestamp));
   parts.push(row('Status', display.status + (display.message ? ' — ' + display.message : '')));
+  if (entry.prevMessage) parts.push(row('Prev. Message', entry.prevMessage));
   parts.push('<div class="qv-divider"></div>');
   parts.push(row('Section', fi.section));
   parts.push(row('Date', fi.cashoutDate));
@@ -2771,6 +2772,7 @@ function markAsSynced() {
   const backups = getBackups();
   const entry = backups[selectedBackupIndex];
   if (entry) {
+    entry.prevMessage = entry.mainMessage || '';
     entry.mainStatus = 'manual';
     entry.mainMessage = 'Manually synced';
     entry.backupStatus = 'manual';
