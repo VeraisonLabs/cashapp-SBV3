@@ -1404,7 +1404,7 @@ function resetSubmitButton() {
 const ERROR_MESSAGES = {
   TEMPLATE_MISSING:    { problem: 'Template tab not found on cashout master sheet' },
   REF_CONFLICT:        { problem: 'REF# {param} already exists on today\'s sheet' },
-  SECTION_FULL:        { problem: '{param} section is full. Change REF# to 00, submit cashout, inform manager "cashout overflow"' },
+  SECTION_FULL:        { problem: '{param} section is full.<br><span style="text-align:left;display:block;margin-top:8px;font-size:14px;line-height:1.8;">1. Change REF# to <span style="font-family:DM Mono,monospace;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:1px 6px;letter-spacing:0.1em;">00</span><br>2. Press Calculate Cashout<br>3. Press Submit Cashout<br>4. Inform manager: "Cashout saved to overflow"</span>' },
   RESUBMIT_NOT_FOUND:  { problem: 'REF# {param} not found, use fresh Submit instead' },
   UNKNOWN_SECTION:     { problem: 'Unknown section "{param}", contact Matt' },
 };
@@ -2167,8 +2167,9 @@ async function submitCashout(isResubmit) {
       displayMsg = isNetworkError ? msg : parsed.problem;
     }
 
-    document.getElementById('errorProblem').textContent = displayMsg;
+    document.getElementById('errorProblem').innerHTML = displayMsg;
     document.getElementById('errorCashoutId').textContent = 'Cashout ID: ' + cashoutId;
+    document.querySelector('.error-action').style.display = (parsed?.code === 'SECTION_FULL') ? 'none' : 'block';
     document.getElementById('errorBanner').style.display = 'block';
     document.getElementById('errorBanner').scrollIntoView({ behavior: 'smooth', block: 'center' });
 
