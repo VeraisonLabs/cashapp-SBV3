@@ -1404,7 +1404,7 @@ function resetSubmitButton() {
 const ERROR_MESSAGES = {
   TEMPLATE_MISSING:    { problem: 'Template tab not found on cashout master sheet' },
   REF_CONFLICT:        { problem: 'REF# {param} already exists on today\'s sheet' },
-  SECTION_FULL:        { problem: '{param} section is full, no empty rows' },
+  SECTION_FULL:        { problem: '{param} section is full. Change REF# to 00, submit cashout, inform manager "cashout overflow"' },
   RESUBMIT_NOT_FOUND:  { problem: 'REF# {param} not found, use fresh Submit instead' },
   UNKNOWN_SECTION:     { problem: 'Unknown section "{param}", contact Matt' },
 };
@@ -1758,7 +1758,7 @@ function calculate() {
   // with its backup record. For managers who legitimately need to
   // overwrite an existing cashout, the path is "Edit to Resubmit" from
   // the Cashout Log, not a fresh submit with the same REF#.
-  if (!isResubmitMode) {
+  if (!isResubmitMode && !/^0+$/.test(refNum)) {
     const cashoutId = cashoutDate + '[REF' + refNum + ']';
     const existing = getBackups().find(b => b.cashoutId === cashoutId);
     if (existing) {

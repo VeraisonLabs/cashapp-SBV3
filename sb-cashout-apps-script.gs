@@ -29,6 +29,11 @@ const MASTER_SHEET_ID   = '1DQKwjm938StCFjOFijAALU_ApHZAW5krUXoU1_3Usxo';
 const TEMPLATE_TAB_NAME = '⚠️ TEMPLATE — DO NOT DELETE';
 const RESUBMIT_TAG      = ' (Resubmitted)';
 const LOCK_TIMEOUT_MS   = 5000;
+const OVERFLOW_START    = 97;
+
+function isOverflowRef(refNumRaw) {
+  return /^0+$/.test(refNumRaw);
+}
 
 // ── Error codes ──────────────────────────────────────────────────────────────
 // The Apps Script throws stable short codes, NOT user-facing prose. The iPad's
@@ -111,15 +116,16 @@ function doPost(e) {
         });
       }
 
+      // ── Overflow: all-zeros REF# routes to bottom of sheet ──────────────
+      if (isOverflowRef(refNumRaw)) {
+        writeOverflowRows(tab, rows, section);
+        return successResponse(rows.length + ' row(s) recorded (overflow)', ss);
+      }
+
       // ── Find existing rows for this ref# in this section ─────────────────
       const existingRows = findRowsForRefNum(tab, config.dataStart, config.dataEnd, refNum);
 
       if (isResubmit) {
-        // Upsert: overwrite if existing rows found, otherwise fresh-write.
-        // The common case is WiFi recovery the morning after — the original
-        // submit never landed, so there's nothing to overwrite. Falling
-        // through to a fresh write is the correct behavior here.
-        // The (Resubmitted) tag only applies to the overwrite path.
         if (existingRows.length > 0) {
           writeRowsOverwrite(tab, config, rows, existingRows);
         } else {
@@ -321,6 +327,34 @@ function nextEmptyRow(sheet, startRow, endRow) {
     if (!nameCell.getValue()) return r;
   }
   return null;
+}
+
+// ── Overflow: append rows to row 97+ when REF# is all zeros ─────────────────
+// No conflict detection, no resubmit logic. Pure append.
+// Column I = Cashout Type so the manager knows where to move each row.
+function writeOverflowRows(sheet, rows, section) {
+  var nextRow = OVERFLOW_START;
+  while (sheet.getRange(nextRow, 2).getValue()) nextRow++;
+
+  rows.forEach(function(row) {
+    var isBar = section.includes('Bar');
+    var duebackValue = (row.owesHouse > 0) ? row.owesHouse : -(row.dueback || 0);
+    var barValue = isBar ? '' : (row.bar || 0);
+    var refValue = String(row.refNum || '');
+
+    sheet.getRange(nextRow, 1, 1, 9).setValues([[
+      refValue,           // A — REF#
+      row.name  || '',    // B — NAME
+      duebackValue,       // C — DUEBACK
+      row.house || 0,     // D — HOUSE
+      row.busser || 0,    // E — BUSSER
+      barValue,           // F — BAR
+      row.expo  || 0,     // G — EXPO
+      row.events || 0,    // H — EVENTS
+      section,            // I — CASHOUT TYPE
+    ]]);
+    nextRow++;
+  });
 }
 
 // ── Test function — run from Apps Script editor ──────────────────────────────
