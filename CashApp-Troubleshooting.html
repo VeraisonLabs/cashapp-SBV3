@@ -588,13 +588,13 @@
           <tr>
             <td><span class="badge badge-conflict">Conflict</span></td>
             <td><a href="#err-ref-conflict">REF# X already exists on today's sheet</a></td>
-            <td>Check if typo or intentional, then correct and resubmit or overwrite</td>
+            <td>Staff changes REF# to 00 and resubmits (saves to <a href="#overflow">overflow</a>)</td>
             <td>Staff used a REF# that's already on today's sheet</td>
           </tr>
           <tr>
             <td><span class="badge badge-error">Error</span></td>
             <td><a href="#err-section-full">X section is full, no empty rows</a></td>
-            <td>Check sheet for duplicate/stale rows, clean up, resubmit</td>
+            <td>Staff changes REF# to 00 and resubmits (saves to <a href="#overflow">overflow</a>)</td>
             <td>Section has no empty rows left</td>
           </tr>
           <tr>
@@ -755,51 +755,51 @@
       <div class="callout callout-safe">
         <h4>What's safe:</h4> The new cashout is stored on the iPad. Nothing was written to the sheet.
       </div>
-      <h3>How to figure out what happened</h3>
-      <p>Ask the staff: <strong>did you type the wrong REF# by mistake?</strong></p>
-
+      <h3>What the staff sees</h3>
+      <p>The app shows two options:</p>
       <div class="callout callout-info" style="margin-top:1rem;">
-        <h4>Case A: Entry error (staff typed the wrong REF#)</h4>
-        On the iPad Cashout Log, tap the conflicting entry to view its data. Have the staff correct the REF# in
-        the form and submit with the right number. Done &mdash; cashout lands on the sheet under the corrected REF#.
+        <h4>Option 1: "Typed wrong REF#"</h4>
+        If the staff made a typo, they tap this button to edit the REF# and try again.
       </div>
       <div class="callout callout-warn" style="margin-top:0.5rem;">
-        <h4>Case B: Not an entry error (REF# is correct, another device got there first)</h4>
-        The staff's REF# is correct but the same number was already used on another device today. To get this cashout
-        into the sheet AND flag the duplicate for your review:
-        <ol class="steps" style="margin-top:0.5rem;">
-          <li>Have the staff <strong>resubmit using their REF# repeated 3 times</strong> (e.g. <code>3 &rarr; 333</code>,
-            <code>12 &rarr; 121212</code>)</li>
-          <li>Inform Matt (email or text) that a cross-device REF# conflict occurred</li>
-          <li>Open today's tab in the master sheet and compare the original REF# row with the new tripled-REF# row
-            &mdash; decide which is correct, or if both should be kept under different REF#s, and edit accordingly.
-            See <a href="#err-wrong-reference-number">Wrong Reference Numbers</a> for the full reconcile steps.</li>
-        </ol>
+        <h4>Option 2: "Change to 00 (overflow)"</h4>
+        If the REF# is correct but already taken, the staff taps this button. The app changes the REF# to
+        <code>00</code>, recalculates, and submits to the <a href="#overflow">overflow area</a> at the bottom of the sheet.
+        The staff should tell the manager: <strong>"REF# used, cashout saved to overflow."</strong>
       </div>
+      <h3>Manager follow-up (after service)</h3>
+      <ol class="steps">
+        <li>Open today's tab and scroll to the overflow area (row 97+)</li>
+        <li>Find the overflow entry. Column I shows the Cashout Type.</li>
+        <li>Compare with the original REF# entry in the correct section</li>
+        <li>Move the overflow row to the correct section, or assign a new REF# as needed</li>
+      </ol>
     </div>
 
     <!-- Section full -->
     <div class="card">
       <h3 id="err-section-full" class="error-anchor">Error: "[Section name] section is full, no empty rows"</h3>
       <p>The named section in today's tab has no empty rows left. For example, PM Server Main has 16 slots (rows
-        21&ndash;36).</p>
+        21-36).</p>
       <div class="callout callout-safe">
         <h4>What's safe:</h4> The new cashout is stored on the iPad. Nothing was
         written to the sheet.
       </div>
-      <p style="font-size:0.9rem; color:var(--gray-500);"><strong>Is this likely to happen?</strong> Almost never.
-        Sandbar rarely has more than a handful of people in any single section per shift. If you're seeing this,
-        something unusual is going on.</p>
-      <h3>How to fix</h3>
+      <h3>What the staff should do (on the iPad)</h3>
+      <p>The app shows numbered steps. Staff follows them:</p>
       <ol class="steps">
-        <li>Open today's tab in the cashout master sheet</li>
-        <li>Scroll to the named section and count the filled rows</li>
-        <li>Check for accidental duplicates, test data, or rows that don't belong to today</li>
-        <li>Delete any rows that shouldn't be there</li>
-        <li>Go to the iPad <strong>Cashout Log</strong>, find the pending cashout, tap <strong>Edit to Resubmit</strong>
-        </li>
-        <li>If the section is genuinely full, email or text Matt ASAP &mdash; the section layout may need to be
-          expanded and DailyCashout data may require manual entry until fixed</li>
+        <li>Change REF# to <code>00</code></li>
+        <li>Press <strong>Calculate Cashout</strong></li>
+        <li>Press <strong>Submit Cashout</strong></li>
+        <li>Tell the manager: <strong>"Cashout section full, saved to overflow"</strong></li>
+      </ol>
+      <p>The cashout will be saved to the <a href="#overflow">overflow area</a> at the bottom of the sheet.</p>
+      <h3>Manager follow-up (after service)</h3>
+      <ol class="steps">
+        <li>Open today's tab and scroll to the overflow area (row 97+)</li>
+        <li>Check why the section filled up (accidental duplicates, test data, or genuinely busy night)</li>
+        <li>Move overflow rows into the correct section if space has been freed up, or leave them in overflow</li>
+        <li>If this keeps happening, email Matt to discuss expanding the section layout</li>
       </ol>
     </div>
 
@@ -899,33 +899,35 @@
     </div>
 
     <div class="card">
-      <h3 id="err-wrong-reference-number">Wrong Reference Numbers &mdash; flagged duplicates (entered 3x)</h3>
-      <p>If a staff member on the iPad tries to submit a cashout with a REF# that's already been used on today's sheet,
-        the app shows them a warning with two options: edit the REF# to a fresh number, or &mdash; if they insist the
-        REF# is correct &mdash; re-enter it repeated three times so the duplicate is flagged for you.</p>
+      <h3 id="overflow">Overflow Area (REF# = 00)</h3>
+      <p>When a cashout can't go into its normal section (REF# conflict or section full), the app redirects it to
+        the <strong>overflow area</strong> at the bottom of the daily sheet (row 97+).</p>
+      <div class="callout callout-info">
+        <h4>How it works:</h4>
+        <ul style="margin:0.25rem 0 0 1.2rem; padding:0;">
+          <li>Staff changes the REF# to <code>00</code> (any combination of zeros works: 0, 00, 000)</li>
+          <li>The cashout is appended to the next empty row starting at row 97</li>
+          <li>Column I shows the <strong>Cashout Type</strong> (e.g. PM Server Upstairs) so you know where it belongs</li>
+          <li>All other columns (A-H) match the normal layout: REF#, Name, Dueback, House, Busser, Bar, Expo, Events</li>
+        </ul>
+      </div>
       <div class="callout callout-warn">
         <h4>What to watch for:</h4>
-        Unusual REF# values in column A of today's tab, such as <code>666</code>, <code>999</code>, or
-        <code>121212</code>. These are always the original REF# repeated three times (e.g. <code>6 &rarr; 666</code>,
-        <code>12 &rarr; 121212</code>). Any REF# that looks like a repeated-digit pattern well above the normal
-        cashout-number range is a flagged duplicate that staff submitted deliberately.
+        After service, check row 97+ on today's tab. If there are any rows there, they need to be reviewed and
+        moved to the correct section. Staff will have told you either:
+        <ul style="margin:0.25rem 0 0 1.2rem; padding:0;">
+          <li><strong>"REF# used, cashout saved to overflow"</strong> = duplicate REF# conflict</li>
+          <li><strong>"Cashout section full, saved to overflow"</strong> = section ran out of rows</li>
+        </ul>
       </div>
-      <p><strong>What's safe:</strong> Both the original cashout (e.g. REF# 6) and the flagged duplicate (REF# 666) are
-        saved separately. Nothing was overwritten. The manager just needs to decide which is the correct record.</p>
-      <p><strong>How to fix (manager decision):</strong></p>
+      <p><strong>How to reconcile (after service):</strong></p>
       <ol class="steps">
-        <li>Find the original cashout (e.g. REF# 6) and its flagged duplicate (REF# 666) on today's tab</li>
-        <li>Compare the rows &mdash; check names, sales figures, tip-outs, and dueback amounts</li>
-        <li>Talk to the staff involved to figure out which version is correct, or whether both should be kept
-          under different REF#s</li>
-        <li>Delete or edit whichever row shouldn't be the final record</li>
-        <li>If keeping the flagged duplicate as a legitimate cashout, rename its REF# (in column A) from
-          <code>666</code> back to whatever it should actually be
-        </li>
+        <li>Open today's tab and scroll to the overflow area (row 97+)</li>
+        <li>For each overflow row, check column I to see which section it belongs to</li>
+        <li>If the correct section has space, cut and paste the row into the right spot and assign the correct REF#</li>
+        <li>If the section is still full, leave the row in overflow (the data is safe and complete)</li>
+        <li>Delete the overflow row after it's been moved (or leave it if keeping in place)</li>
       </ol>
-      <p style="font-size:0.9rem; color:var(--gray-500);">Why the app can't auto-reconcile: deciding which of two
-        conflicting cashouts is correct requires human judgment about what happened during the shift. The app routes
-        this to the manager on purpose &mdash; the tripled REF# is the signal that your review is needed.</p>
     </div>
 
     <hr>
