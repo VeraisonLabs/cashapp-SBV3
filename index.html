@@ -1021,8 +1021,8 @@
 
     <div class="ref-conflict-divider">or</div>
 
-    <button class="ref-conflict-btn ref-conflict-btn-secondary" id="refConflictTripleBtn" onclick="submitTripledRef()">Enter as —</button>
-    <div class="ref-conflict-option-note">Repeating the REF# 3x flags it for the manager to reconcile</div>
+    <button class="ref-conflict-btn ref-conflict-btn-secondary" onclick="useOverflowRef()">Change to 00 (overflow)</button>
+    <div class="ref-conflict-option-note">Inform manager: "REF# used, cashout saved to overflow"</div>
   </div>
 
   <!-- CASHOUT INFO -->
@@ -1404,7 +1404,7 @@ function resetSubmitButton() {
 const ERROR_MESSAGES = {
   TEMPLATE_MISSING:    { problem: 'Template tab not found on cashout master sheet' },
   REF_CONFLICT:        { problem: 'REF# {param} already exists on today\'s sheet' },
-  SECTION_FULL:        { problem: '{param} section is full.<br><span style="text-align:left;display:block;margin-top:8px;font-size:14px;line-height:1.8;">1. Change REF# to <span style="font-family:DM Mono,monospace;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:1px 6px;letter-spacing:0.1em;">00</span><br>2. Press Calculate Cashout<br>3. Press Submit Cashout<br>4. Inform manager: "Cashout saved to overflow"</span>' },
+  SECTION_FULL:        { problem: '{param} section is full.<br><span style="text-align:left;display:block;margin-top:8px;font-size:14px;line-height:1.8;">1. Change REF# to <span style="font-family:DM Mono,monospace;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:1px 6px;letter-spacing:0.1em;">00</span><br>2. Press Calculate Cashout<br>3. Press Submit Cashout<br>4. Inform manager: "Cashout section full, saved to overflow"</span>' },
   RESUBMIT_NOT_FOUND:  { problem: 'REF# {param} not found, use fresh Submit instead' },
   UNKNOWN_SECTION:     { problem: 'Unknown section "{param}", contact Matt' },
 };
@@ -1513,13 +1513,8 @@ function getNames() {
 
 // REF# conflict banner — persistent (doesn't auto-dismiss). Shown when a
 // fresh submit attempts a date+REF# that's already in the backup log.
-// Two escape paths: (1) edit the REF# to something fresh, (2) enter the
-// REF# repeated 3x as a visual flag so the manager reconciles downstream.
+// Two escape paths: (1) edit the REF# to something fresh, (2) use 00 overflow.
 function showRefConflict(refNum, date) {
-  const tripled = String(refNum) + String(refNum) + String(refNum);
-  const tripleBtn = document.getElementById('refConflictTripleBtn');
-  tripleBtn.textContent = 'Enter as ' + tripled;
-  tripleBtn.dataset.tripled = tripled;
   const banner = document.getElementById('refConflictBanner');
   banner.style.display = 'block';
   banner.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1540,13 +1535,10 @@ function editRefConflict() {
   refEl.select?.();
 }
 
-// "Enter as XXX" — replace the REF# with its tripled version, dismiss the
-// banner, and re-run calculate. The new cashoutId won't collide, and the
-// tripled REF# will stand out in the manager's sheet for reconciliation.
-function submitTripledRef() {
-  const tripled = document.getElementById('refConflictTripleBtn').dataset.tripled;
-  if (!tripled) return;
-  document.getElementById('refNum').value = tripled;
+// "Change to 00 (overflow)" — set REF# to 00 and re-run calculate.
+// Overflow refs are exempt from conflict detection and append to row 97+.
+function useOverflowRef() {
+  document.getElementById('refNum').value = '00';
   dismissRefConflict();
   calculate();
 }
@@ -2162,7 +2154,7 @@ async function submitCashout(isResubmit) {
     // recovery path inline in the message.
     let displayMsg;
     if (parsed?.code === 'REF_CONFLICT') {
-      displayMsg = 'Submission error. Inform Manager of duplicate REF# and resubmit cashout using # repeated 3x (ex: 1→111)';
+      displayMsg = 'Duplicate REF# on another device. Change REF# to 00, press Calculate, then Submit. Inform manager: "REF# used, cashout saved to overflow"';
     } else {
       displayMsg = isNetworkError ? msg : parsed.problem;
     }
