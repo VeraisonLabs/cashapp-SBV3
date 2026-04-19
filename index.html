@@ -892,6 +892,55 @@
     cursor: not-allowed;
     background: var(--surface);
   }
+  .stale-date-banner {
+    margin: 10px 0 14px;
+    padding: 12px 14px;
+    background: rgba(255, 184, 28, 0.14);
+    border: 1px solid #f0b429;
+    border-left: 4px solid #f0b429;
+    border-radius: 6px;
+    color: #f5d78a;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .stale-date-banner strong {
+    display: block;
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #f0b429;
+    margin-bottom: 6px;
+  }
+  .stale-date-banner .stale-date-dates {
+    margin: 4px 0 10px;
+  }
+  .stale-date-banner .stale-date-dates code {
+    background: rgba(240, 180, 41, 0.15);
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-family: 'DM Mono', monospace;
+    color: #f5d78a;
+  }
+  .stale-date-banner button {
+    display: block;
+    width: 100%;
+    padding: 10px 14px;
+    background: #f0b429;
+    color: #1a1a1a;
+    border: none;
+    border-radius: 5px;
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .stale-date-banner button:active {
+    opacity: 0.8;
+  }
 
   /* Troubleshooting help panel — always visible on the Cashout Log screen */
   .backup-help-hint {
@@ -1035,6 +1084,14 @@
         <div>Inform manager if wrong day was submitted</div>
       </div>
       <input type="date" id="cashoutDate">
+      <div class="stale-date-banner" id="staleDateBanner" style="display:none;">
+        <strong>Date Not Current</strong>
+        <div class="stale-date-dates">
+          Cashout date is <code id="staleDateValue"></code>. Today is <code id="staleDateToday"></code>.
+        </div>
+        <div>Double-check this is intentional, then tap OK and submit again.</div>
+        <button type="button" onclick="dismissStaleDateBanner()">OK, I&rsquo;ve Checked</button>
+      </div>
     </div>
     <div class="field">
       <label>REFERENCE #</label>
@@ -1390,6 +1447,71 @@ function setResubmitMode(on) {
   if (lockEl) lockEl.style.display = on ? 'block' : 'none';
 }
 
+// ── STALE-DATE GUARD ──────────────────────────────────────────────────────────
+// The iPad home-screen web app never reloads on its own — Safari just suspends
+// and resumes the tab across locks. That means the `#cashoutDate` field can
+// carry yesterday's date into a new day's first cashout unless we actively
+// refresh it. Three mechanisms defend against this:
+//   1. scheduleDailyDateRefresh() fires at 3am Vancouver and updates the field.
+//   2. A visibilitychange listener catches the case where the iPad slept
+//      through 3am and the setTimeout paused.
+//   3. submitCashout() shows a soft banner if the date is still stale at
+//      submit time, requiring one explicit confirmation tap before proceeding.
+// ──────────────────────────────────────────────────────────────────────────────
+let staleDateAcknowledged = false;  // true once the user dismisses the banner
+
+function scheduleDailyDateRefresh() {
+  const now = new Date();
+  const next = new Date(now);
+  next.setHours(3, 0, 0, 0);
+  if (next <= now) next.setDate(next.getDate() + 1);
+  const msUntil = next - now;
+  setTimeout(function () {
+    if (!isResubmitMode) {
+      const dateEl = document.getElementById('cashoutDate');
+      if (dateEl) dateEl.value = todayVancouver();
+      staleDateAcknowledged = false;
+    }
+    scheduleDailyDateRefresh();  // re-arm for the next 3am
+  }, msUntil);
+}
+
+function onVisibilityChangeRefresh() {
+  if (document.hidden || isResubmitMode) return;
+  const dateEl = document.getElementById('cashoutDate');
+  if (!dateEl) return;
+  const today = todayVancouver();
+  // Only auto-refresh if the field is clearly on a past day AND we're past 3am
+  // on today's calendar (so a 2am bar-close cashout still defaults to "today's
+  // shift" which technically is yesterday's date for late-night staff).
+  const currentHour = new Date().toLocaleString('en-CA', {
+    timeZone: 'America/Vancouver',
+    hour12: false,
+    hour: '2-digit',
+  });
+  if (dateEl.value && dateEl.value < today && parseInt(currentHour, 10) >= 3) {
+    dateEl.value = today;
+    staleDateAcknowledged = false;
+  }
+}
+
+function showStaleDateBanner(currentDate, todayDate) {
+  const banner = document.getElementById('staleDateBanner');
+  if (!banner) return;
+  const currentEl = document.getElementById('staleDateValue');
+  const todayEl   = document.getElementById('staleDateToday');
+  if (currentEl) currentEl.textContent = currentDate;
+  if (todayEl)   todayEl.textContent   = todayDate;
+  banner.style.display = 'block';
+  banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function dismissStaleDateBanner() {
+  staleDateAcknowledged = true;
+  const banner = document.getElementById('staleDateBanner');
+  if (banner) banner.style.display = 'none';
+}
+
 function resetSubmitButton() {
   const btn = document.getElementById('submitBtn');
   btn.disabled = false;
@@ -1504,6 +1626,13 @@ const fmt = n => '$' + Math.abs(n).toFixed(2);
 
 function roundHalfUp(n) {
   return Math.round((n + 1e-10) * 100) / 100;
+}
+
+// Return today's date in YYYY-MM-DD format for the America/Vancouver timezone.
+// Single source of truth for "what day is it?" — everything that sets the date
+// field or compares against it should go through this helper.
+function todayVancouver() {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Vancouver' });
 }
 
 function getNames() {
@@ -2020,6 +2149,20 @@ async function submitCashout(isResubmit) {
     const ok = confirm('This will replace the previous cashout for this Reference #.\n\nContinue?');
     if (!ok) return;
   }
+
+  // Stale-date guard: if the cashout date is older than today and this isn't
+  // a resubmit, show a soft banner and block submit until the user taps OK.
+  // Prevents the overnight-home-screen-app bug where iOS Safari restores a
+  // tab without reloading and the date field silently carries yesterday.
+  if (!isResubmit && !staleDateAcknowledged) {
+    const today = todayVancouver();
+    const currentDate = calcData.cashoutDate;
+    if (currentDate && currentDate !== today) {
+      showStaleDateBanner(currentDate, today);
+      return;
+    }
+  }
+
   const btn = document.getElementById('submitBtn');
   btn.disabled = true;
   btn.textContent = 'Submitting…';
@@ -2187,8 +2330,8 @@ function resetForm() {
   ['cashoutDate','refNum','names','totalSales','netCash','foodSales','beoSales','sushiNames']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   // Re-set date to today
-  document.getElementById('cashoutDate').value = new Date()
-    .toLocaleDateString('en-CA', { timeZone: 'America/Vancouver' });
+  document.getElementById('cashoutDate').value = todayVancouver();
+  staleDateAcknowledged = false;
 
   document.getElementById('section').value = '';
   syncSectionGrid();
@@ -2781,8 +2924,27 @@ function markAsSynced() {
 // ── INIT ──────────────────────────────────────────────────────────────────────
 (function () {
   // Set today's date as default
-  document.getElementById('cashoutDate').value =
-    new Date().toLocaleDateString('en-CA', { timeZone: 'America/Vancouver' });
+  document.getElementById('cashoutDate').value = todayVancouver();
+
+  // Schedule a daily date refresh at 3am Vancouver time. Handles the home-screen
+  // web-app lifecycle: iOS Safari doesn't reload the page when the iPad is
+  // unlocked — the tab restores from suspend. Without this refresh, a cashout
+  // started the morning after an overnight idle would submit with yesterday's
+  // date and land on the wrong daily tab. 3am (not midnight) is chosen so
+  // legitimate late-night cashouts (bar close 1-2am) keep the prior day's date.
+  scheduleDailyDateRefresh();
+
+  // Catch the case where the iPad was asleep at 3am and the setTimeout never
+  // fired — when the app returns to foreground, if we're past 3am and the date
+  // field is on a prior day, refresh it.
+  document.addEventListener('visibilitychange', onVisibilityChangeRefresh);
+
+  // Clear the stale-date acknowledgment whenever the user edits the date field,
+  // so a new stale condition gets flagged again.
+  const dateInput = document.getElementById('cashoutDate');
+  if (dateInput) {
+    dateInput.addEventListener('change', () => { staleDateAcknowledged = false; });
+  }
 
   // Check for pending backups and highlight the toggle button
   const backups = getBackups();

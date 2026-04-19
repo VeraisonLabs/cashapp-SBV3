@@ -256,6 +256,73 @@ The Backups screen on the iPad is the safety net. Every cashout ever submitted f
 
 ---
 
+## Backup Sheet — Layout & Scan-for-Typo Reference
+
+The `[BackupLog]AllCashouts` Google Sheet (ID `1AIsfen18Tzbvhrhd4pPsCLnZXi_-iGgNAN297chb7g4`) is an append-only raw log. One row PER PERSON — a 3-way split makes three rows sharing the same Cashout ID. This doc section is the reference for its **18-column layout** (live since 2026-04-19). For the raw truth, the authoritative source is the big comment block at the top of [`sb-backup-apps-script.gs`](sb-backup-apps-script.gs) — that's where the column contract lives in code.
+
+### Full column layout
+
+| Col | Name | What it holds | Notes |
+|-----|------|---------------|-------|
+| A | Cashout ID | `YYYY-MM-DD[REF##]` | e.g. `2026-04-11[REF42]` |
+| B | Names | Comma-separated summary of everyone in the split | Same in every row of a split |
+| C | CashoutType | The section (e.g. "PM Server Main") | Moved forward from column L in 2026-04-19 for scan-ability |
+| **D** | **TotalSales** | ← INPUT | Server/Bar typed value. Blank for sushi. |
+| **E** | **CashDue** | ← INPUT | `netCash` for server/bar; `totalTips` (pool pre-split) for sushi. |
+| **F** | **FoodSales** | ← INPUT | Server/Bar typed value. Blank for sushi. |
+| **G** | **HouseTip** | ← INPUT placeholder | Always blank today. Will auto-populate once the frontend adds a HouseTip input field — no script redeploy needed. |
+| H | REFERENCE # | ← master sheet col A | With suffix: `-Sushi`, `-MainBar`, `-UpstairsBar`. Servers unsuffixed. |
+| I | NAME | ← master sheet col B | Per-person |
+| J | DUEBACK | ← master sheet col C | Negative = house owes staff; positive = staff owes house |
+| K | HOUSE | ← master sheet col D | Calculated tip-out. Zeroed for sushi. |
+| L | BUSSER | ← master sheet col E | Calculated. Zeroed for sushi. |
+| M | BAR | ← master sheet col F | Blank for bar cashouts (matching main-script convention). Zeroed for sushi. |
+| N | EXPO | ← master sheet col G | Zeroed for sushi. |
+| O | EVENTS | ← master sheet col H | Zeroed for sushi. |
+| P | Submit Type | `NEW` or `RESUBMIT` | Set from `data.isResubmit` |
+| Q | Received At | `YYYY-MM-DD HH:mm:ss` America/Vancouver | When the backup script actually ran |
+| R | Raw Data | Full JSON of entire submission | Same in every row of a split. Includes all fields, even ones not surfaced in other columns. |
+
+### Why inputs are surfaced in D-G
+
+If a server mistypes a sales number, the mistake is usually invisible in the calculated output columns (HOUSE/BUSSER/BAR etc.) because it propagates proportionally through the percentages. Surfacing the inputs directly lets the manager eyeball a row and spot obvious typos — e.g. `TotalSales=20000` when everything else is `~$1500` screams "missed the decimal point."
+
+**BEO Sales is NOT a column** — by design. Events (column O) is exactly 1% of BEO, so reading `19.77` in Events mentally reverses to `~$1977` in BEO. No separate column needed.
+
+### Disaster-recovery copy-to-master procedure
+
+If the main sheet corrupts or the main Apps Script fails silently and you need to rebuild a cashout manually:
+
+1. In `[BackupLog]AllCashouts`, find the cashout's rows (match by Cashout ID in column A — there's one row per person)
+2. Select cells **H:O** across those rows
+3. Copy
+4. Open the master sheet's daily tab (`DailyCashout-Master` → `YYYY-MM-DD`)
+5. Click into cell `A{row}` of the correct section
+6. Paste
+
+Column mapping: backup H→master A, I→B, J→C, K→D, L→E, M→F, N→G, O→H. It's a direct 1:1 paste — no re-ordering required.
+
+**For sushi cashouts,** the same H:O block works: each sushi row has its suffixed REF# (`45-Sushi`), the person's name, their per-person dueback, and zeros for house/busser/bar/expo/events. Paste into the PM Main Sushi section (rows 21-36 in the master template) exactly as-is.
+
+### Scan-for-typo quick workflow
+
+When reviewing a shift's cashouts end-of-night:
+
+1. Open `[BackupLog]AllCashouts` and filter/sort to the current date (column Q)
+2. Scan columns **D-G** (inputs) row by row — look for numbers that don't fit the usual range for that section (e.g. a 4-digit TotalSales on a shift where $1-2k is typical)
+3. If a row looks off, open column R (Raw Data) for the full JSON including any field that isn't surfaced (`beoSales`, `sharePct`, `hours`, etc.)
+4. Cross-reference against the master sheet to confirm the final values match what was paid out
+
+### Historical rows note
+
+Rows submitted before 2026-04-19 follow the old **15-column** layout (no CashoutType in column C, Shared By in column M, different column order). If old rows coexist with new ones in the same tab, expect visual misalignment below the header. Default recommendation: cut+paste pre-2026-04-19 rows to an archive tab named `pre-2026-04-19` and keep the live tab clean.
+
+### HouseTip placeholder — how it will activate
+
+Column G is wired to read `row.houseTip || ''`, and the frontend payload doesn't send `houseTip` yet, so G stays blank. When Matt adds a HouseTip input field in `index.html` (a future session), the frontend will start including `houseTip` in each row object — column G will begin populating automatically on the very next submission. Zero Apps Script changes required.
+
+---
+
 ## Important: never use Private Browsing
 
 If Safari is in Private Browsing mode, localStorage is wiped when the tab closes. This means all backup data stored on the iPad would be lost. The home screen shortcut avoids this by always opening in a normal Safari session, but if someone ever opens the app URL manually in a private tab, backups will not persist.
@@ -386,5 +453,8 @@ Original design sketch preserved above for historical context — useful when de
 | 2026-04-14 | Matt | Renamed `[CashApp]Troubleshooting.md` → `[CashApp]DevelopmentTroubleshooting.md` to clarify the living-internal-doc vs. stable-client-facing distinction. |
 | 2026-04-14 | Matt | Shipped per-row deep links: error messages in the Cashout Log table are now clickable anchors that open the corresponding troubleshooting-guide section. Plus: "View Troubleshooting Guide" button at the top of the log, and "Load into Form" action renamed to "Edit to Resubmit" (commit `f92022f`). |
 | 2026-04-14 | Matt | Moved the Private Browsing / localStorage warning above Status References so readers can't miss it. Removed the change log section from the client-facing HTML (kept here in the dev doc). |
+| 2026-04-19 | Matt | Backup sheet column layout expanded 15 → 18 columns. Added scan-for-typo INPUT columns (TotalSales, CashDue, FoodSales, HouseTip) between `Names` and the master-mirror block. `CashoutType` moved forward to column C. `Shared By` dropped (derivable from Names). Master-mirror paste range shifted from `C:J → A:H` to `H:O → A:H`. `HouseTip` is a forward-looking placeholder — column exists now, will auto-populate when the frontend adds a HouseTip input field. Requires manual header-row update on `[BackupLog]AllCashouts` + Apps Script redeploy. |
+| 2026-04-19 | Matt | Documentation pass for the new 18-column layout: (1) added "Backup Sheet Layout (v3)" section to `projects/cashapp-sb/CLAUDE.md` pointing here for depth; (2) added "Backup Sheet — Layout & Scan-for-Typo Reference" section in this doc (full column table, H:O→A:H paste procedure, scan workflow, HouseTip placeholder mechanics); (3) updated client-facing `CashApp-Troubleshooting.html` Layer 2 block to note blue-headers = inputs / green-headers = outputs, plus brief H:O→A:H copy-to-master mention. Planned header color convention on the physical sheet: blue fill for D-G, green fill for H-O. |
+| 2026-04-19 | Matt | **Stale-date bug fix.** Discovered a cashout submitted on 2026-04-19 landed on yesterday's (2026-04-18) daily tab via the 00 overflow. Root cause: iOS Safari treats home-screen web apps as long-lived tabs — locking the iPad overnight suspends the tab instead of closing it, so the INIT IIFE (which sets `#cashoutDate` to today's Vancouver date) never re-fires on wake. The date field silently carried yesterday into the next day's first cashout. Three-layer defense added: (1) `scheduleDailyDateRefresh()` fires at 3am Vancouver time to refresh the date (3am not midnight, so late-night bar-close cashouts keep the correct prior-day date); (2) `visibilitychange` listener catches the case where the iPad slept through 3am and the setTimeout paused — when the app returns to foreground past 3am with a prior-day date, it refreshes; (3) Submit-time soft guard: if `calcData.cashoutDate !== todayVancouver()` and not in resubmit mode, show a soft yellow "Date Not Current" banner with an "OK, I've Checked" button. User must dismiss the banner before re-tapping Submit (non-blocking, preserves legitimate old-date submissions). New helper `todayVancouver()` centralizes date computation; all inline `new Date().toLocaleDateString(...)` calls replaced. Added `staleDateAcknowledged` flag reset on date-field change AND resetForm. |
 
 *Add entries here as you make edits. Keep a paper trail.*

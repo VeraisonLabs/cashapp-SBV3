@@ -9,38 +9,49 @@
 //
 // Row granularity: ONE ROW PER PERSON (not per cashout). A 3-way split
 // produces 3 rows sharing the same Cashout ID. This matches the iPad's
-// N-rows-per-split payload shape and enables direct copy/paste from this
-// backup's master-mirror columns (C-J) into the master sheet's A-H.
+// N-rows-per-split payload shape and enables direct copy/paste from the
+// master-mirror columns (H:O) into the master sheet's A:H.
 //
-// COLUMN LAYOUT (15 columns — header row must match):
-//   A: Cashout ID        (2026-04-11[REF42])
-//   B: Names             (comma-separated summary of everyone in the split)
-//   C: REFERENCE #       ← master sheet column A
-//   D: NAME              ← master sheet column B
-//   E: DUEBACK           ← master sheet column C
-//   F: HOUSE             ← master sheet column D
-//   G: BUSSER            ← master sheet column E
-//   H: BAR               ← master sheet column F  (blank for bar cashouts)
-//   I: EXPO              ← master sheet column G
-//   J: EVENTS            ← master sheet column H
-//   K: Received At
-//   L: Cashout Type
-//   M: Shared By
-//   N: Submit Type       (NEW or RESUBMIT)
-//   O: Raw Data          (full JSON of entire submission)
+// COLUMN LAYOUT (18 columns — header row must match):
+//   A:  Cashout ID        (2026-04-11[REF42])
+//   B:  Names             (comma-separated summary of everyone in the split)
+//   C:  CashoutType       (e.g. "PM Server Main" — surfaced up front for scan)
+//   D:  TotalSales        ← INPUT  (server/bar typed value; blank for sushi)
+//   E:  CashDue           ← INPUT  (netCash for server/bar; totalTips for sushi)
+//   F:  FoodSales         ← INPUT  (server/bar typed value; blank for sushi)
+//   G:  HouseTip          ← INPUT placeholder (reads row.houseTip; blank today,
+//                          auto-populates once the frontend adds the field)
+//   H:  REFERENCE #       ← master sheet column A  (master-mirror block starts)
+//   I:  NAME              ← master sheet column B
+//   J:  DUEBACK           ← master sheet column C
+//   K:  HOUSE             ← master sheet column D
+//   L:  BUSSER            ← master sheet column E
+//   M:  BAR               ← master sheet column F  (blank for bar cashouts)
+//   N:  EXPO              ← master sheet column G
+//   O:  EVENTS            ← master sheet column H  (master-mirror block ends)
+//   P:  Submit Type       (NEW or RESUBMIT)
+//   Q:  Received At
+//   R:  Raw Data          (full JSON of entire submission)
 //
-// To copy a cashout to the master sheet manually: select C:J for the rows
+// Inputs columns D-G exist so the manager can scan for data-entry typos
+// without opening Raw Data. BEO Sales is NOT surfaced — Events output is
+// 1% of BEO, so a $19.77 Events column reveals the ~$1977 BEO input by
+// mental arithmetic.
+//
+// To copy a cashout to the master sheet manually: select H:O for the rows
 // you want, paste into A:H of the master sheet's daily tab.
 //
-// For sushi cashouts, columns C-J now mirror the master sheet (per-person
-// rows with suffixed REF#, name, and dueback amount; tip-outs zeroed).
+// For sushi cashouts, columns H-O mirror the master sheet (per-person rows
+// with suffixed REF#, name, and dueback amount; tip-outs zeroed). The only
+// sushi input surfaced is CashDue (column E), which holds totalTips — the
+// pool total that gets split 50/50 between bar and sushi teams.
 //
 // SETUP:
 //   1. Set BACKUP_SHEET_ID to the [BackupLog]AllCashouts spreadsheet ID.
 //   2. Paste the header row into row 1 of the sheet:
-//      Cashout ID | Names | REFERENCE # | NAME | DUEBACK | HOUSE | BUSSER |
-//      BAR | EXPO | EVENTS | Received At | Cashout Type | Shared By |
-//      Submit Type | Raw Data
+//      Cashout ID | Names | CashoutType | TotalSales | CashDue | FoodSales |
+//      HouseTip | REFERENCE # | NAME | DUEBACK | HOUSE | BUSSER | BAR |
+//      EXPO | EVENTS | Submit Type | Received At | Raw Data
 //   3. Deploy as a SEPARATE Web App (Execute as: Me, Who has access: Anyone).
 //      This must be a different deployment from the main Apps Script.
 //   4. Paste the Web App URL into the HTML file's BACKUP_SCRIPT_URL constant.
@@ -81,51 +92,58 @@ function doPost(e) {
     var submitType = isResubmit ? 'RESUBMIT' : 'NEW';
 
     // Append one row PER PERSON (N rows per split, 1 row for solos).
-    // Columns C-J mirror the master sheet's A-H layout exactly, so the manager
+    // Columns H-O mirror the master sheet's A-H layout exactly, so the manager
     // can select those cells and paste them directly into the master sheet if
     // they ever need to copy a cashout by hand.
     //
-    // Layout (15 columns):
+    // Layout (18 columns):
     //   A: Cashout ID
     //   B: Names (summary — comma-separated for splits, single name for solos)
-    //   C: REFERENCE #     <-- master sheet column A
-    //   D: NAME            <-- master sheet column B
-    //   E: DUEBACK         <-- master sheet column C
-    //   F: HOUSE           <-- master sheet column D
-    //   G: BUSSER          <-- master sheet column E
-    //   H: BAR             <-- master sheet column F  (blank for bar cashouts, matching the main script)
-    //   I: EXPO            <-- master sheet column G
-    //   J: EVENTS          <-- master sheet column H
-    //   K: Received At
-    //   L: Cashout Type
-    //   M: Shared By
-    //   N: Submit Type
-    //   O: Raw Data (full JSON of entire submission — same in every row of a split)
+    //   C: CashoutType (e.g. "PM Server Main")
+    //   D: TotalSales    <-- INPUT  (row.totalSales; blank for sushi)
+    //   E: CashDue       <-- INPUT  (row.netCash for server/bar; row.totalTips for sushi)
+    //   F: FoodSales     <-- INPUT  (row.foodSales; blank for sushi)
+    //   G: HouseTip      <-- INPUT placeholder (row.houseTip || '')
+    //   H: REFERENCE #   <-- master sheet column A
+    //   I: NAME          <-- master sheet column B
+    //   J: DUEBACK       <-- master sheet column C
+    //   K: HOUSE         <-- master sheet column D
+    //   L: BUSSER        <-- master sheet column E
+    //   M: BAR           <-- master sheet column F  (blank for bar cashouts, matching the main script)
+    //   N: EXPO          <-- master sheet column G
+    //   O: EVENTS        <-- master sheet column H
+    //   P: Submit Type
+    //   Q: Received At
+    //   R: Raw Data (full JSON of entire submission — same in every row of a split)
     //
     rows.forEach(function(row) {
       var isBar = section.indexOf('Bar') !== -1;
 
       if (isSushi) {
-        // Sushi: per-person rows with suffixed REF#, name, dueback; tip-outs zeroed
+        // Sushi: per-person rows with suffixed REF#, name, dueback; tip-outs zeroed.
+        // Only surfaced input is CashDue = row.totalTips (the pool total pre-split).
         var amt = row.amount || 0;
         var duebackValue = amt < 0 ? amt : (amt > 0 ? amt : 0);
 
         sheet.appendRow([
-          cashoutId,          // A
-          names,              // B
-          refNumFull,         // C — REFERENCE # (e.g. "45-Sushi")
-          row.name || '',     // D — NAME
-          duebackValue,       // E — DUEBACK
-          0,                  // F — HOUSE
-          0,                  // G — BUSSER
-          0,                  // H — BAR
-          0,                  // I — EXPO
-          0,                  // J — EVENTS
-          receivedAt,         // K
-          section,            // L
-          rows.length,        // M
-          submitType,         // N
-          rawJson,            // O
+          cashoutId,             // A
+          names,                 // B
+          section,               // C — CashoutType
+          '',                    // D — TotalSales (n/a for sushi)
+          row.totalTips || 0,    // E — CashDue (sushi pool total)
+          '',                    // F — FoodSales (n/a for sushi)
+          '',                    // G — HouseTip (n/a for sushi)
+          refNumFull,            // H — REFERENCE # (e.g. "45-Sushi")
+          row.name || '',        // I — NAME
+          duebackValue,          // J — DUEBACK
+          0,                     // K — HOUSE
+          0,                     // L — BUSSER
+          0,                     // M — BAR
+          0,                     // N — EXPO
+          0,                     // O — EVENTS
+          submitType,            // P
+          receivedAt,            // Q
+          rawJson,               // R
         ]);
       } else {
         // Server / Bar: compute the master-sheet values using the same conventions
@@ -134,21 +152,24 @@ function doPost(e) {
         var barValue = isBar ? '' : (row.bar || 0);
 
         sheet.appendRow([
-          cashoutId,          // A
-          names,              // B
-          refNumFull,         // C — REFERENCE # (with suffix for bar)
-          row.name || '',     // D — NAME
-          duebackValue,       // E — DUEBACK
-          row.house || 0,     // F — HOUSE
-          row.busser || 0,    // G — BUSSER
-          barValue,           // H — BAR
-          row.expo || 0,      // I — EXPO
-          row.events || 0,    // J — EVENTS
-          receivedAt,         // K
-          section,            // L
-          rows.length,        // M
-          submitType,         // N
-          rawJson,            // O
+          cashoutId,                // A
+          names,                    // B
+          section,                  // C — CashoutType
+          row.totalSales || 0,      // D — TotalSales (input)
+          row.netCash || 0,         // E — CashDue    (input)
+          row.foodSales || 0,       // F — FoodSales  (input)
+          row.houseTip || '',       // G — HouseTip   (input placeholder — blank until frontend adds field)
+          refNumFull,               // H — REFERENCE # (with suffix for bar)
+          row.name || '',           // I — NAME
+          duebackValue,             // J — DUEBACK
+          row.house || 0,           // K — HOUSE
+          row.busser || 0,          // L — BUSSER
+          barValue,                 // M — BAR
+          row.expo || 0,            // N — EXPO
+          row.events || 0,          // O — EVENTS
+          submitType,               // P
+          receivedAt,               // Q
+          rawJson,                  // R
         ]);
       }
     });
@@ -181,6 +202,7 @@ function testBackup() {
       refNum:      '42',
       name:        'Alice',
       isFirst:     true,
+      totalSales:  2000, netCash: -132.50, foodSales: 1500, beoSales: 0,
       house:       70, busser: 20, bar: 20, expo: 22.50, events: 0,
       dueback:     132.50, owesHouse: 0,
     }],
