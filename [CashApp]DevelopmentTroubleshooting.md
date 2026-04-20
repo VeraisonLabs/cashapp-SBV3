@@ -323,6 +323,74 @@ Column G is wired to read `row.houseTip || ''`, and the frontend payload doesn't
 
 ---
 
+## Design rationale: why the date field is locked during resubmit
+
+The cashout date input is **disabled** whenever `isResubmitMode === true` (see `setResubmitMode()` in [index.html](index.html)). The lock is shown via the red `Date Locked for Resubmit` warning: *"Inform manager if wrong day was submitted."*
+
+This is intentional and load-bearing. Keep the lock. Here's why.
+
+### What resubmit actually does server-side
+
+Resubmit is an **upsert / overwrite-in-place**, not an append. The main Apps Script:
+
+1. Resolves the daily tab from the submitted `cashoutDate` (e.g. `2026-04-19`).
+2. On that tab, scans the section's row range looking for rows matching the REF#.
+3. If matches found → overwrites those cells and tags column A with `(Resubmitted)`.
+4. If no matches found → throws `RESUBMIT_NOT_FOUND`.
+
+Which tab gets scanned is a function of the date. The tab + REF# together are the composite identifier for "which rows to overwrite."
+
+### The three failure modes unlocking the date would create
+
+| Failure | What would happen | Why it's bad |
+|---|---|---|
+| **`RESUBMIT_NOT_FOUND` on an unrelated day** | Staff changes date, the new day's tab has no matching REF#, server throws. | Noisy but recoverable. Confusing for staff mid-shift because the mental model is "I'm resubmitting *this* cashout" but the error implies it's not there. |
+| **Silent duplicate on a different tab** | New day's tab has an empty slot, Apps Script falls through to the fresh-write path, creates a new REF# row on the NEW day. The original rows stay on the OLD day's tab. | Catastrophic. Two copies of one cashout on two different daily tabs, both looking legitimate. End-of-week reconciliation finds a duplicate with no easy way to tell which was the "real" one. |
+| **Lost audit trail** | Managers reviewing historical cashouts can't trust that each row reflects what was actually paid out on that date. | Undermines the core value of the master sheet. |
+
+### Why the loud-failure path is actually a *feature*
+
+When the date is wrong for any reason (stale iPad, typo, etc.), the server errors (`REF_CONFLICT`, `SECTION_FULL`, `RESUBMIT_NOT_FOUND`) all funnel staff into the SAME manual-recovery workflow:
+
+> Change REF# to `00` → submit to overflow → inform manager.
+
+One recovery rule, three triggering errors. Staff only memorize the rule, not the diagnosis. And every path ends with "inform manager," which means a human touchpoint happens within minutes of any data-integrity risk. This is by design — silent routing of a mis-dated cashout to the "right" day would mask bugs for days or weeks before anyone noticed. Loud failure is the system's self-reporting mechanism.
+
+### The legitimate "date was actually wrong" escape hatch
+
+If the ORIGINAL submission truly landed on the wrong day (e.g. the staff submitted Monday's cashout with the iPad stuck on Sunday's date), the fix is **not** a resubmit with a corrected date. It's a manager-side manual fix:
+
+1. Manager opens the wrong-day tab, deletes the errant rows.
+2. Staff submits fresh on the correct day via a normal submit (not Edit to Resubmit).
+
+The `Date Locked for Resubmit` warning text points to this: *"Inform manager if wrong day was submitted."* That's the handoff. The staff don't try to "fix" it from the iPad; they escalate.
+
+### Smart detection that keeps the lock from over-triggering
+
+The lock only applies when there are actually rows to overwrite. `loadFromBackup()` derives `isResubmit` from `entry.mainStatus`:
+
+| `mainStatus` | `isResubmit` | Date field |
+|---|---|---|
+| `success` | `true` | **Locked** — original rows exist on original day's tab, must overwrite there. |
+| `pending` / `error` / `manual` | `false` | **Editable** — nothing ever landed on any tab, this is really a fresh submit in disguise. |
+
+This is why a WiFi-drop recovery (Pending cashout, never made it to the server) lets the staff edit the date — there are no server-side rows to protect.
+
+### How this pairs with the 2026-04-19 stale-date guard
+
+The stale-date guard (`scheduleDailyDateRefresh()` + `visibilitychange` listener + submit-time "Date Not Current" banner) is the **preventative layer** — it stops a stale date from reaching the server in the first place.
+
+The resubmit date-lock + server error codes are the **reactive layer** — they catch anything that slips past prevention.
+
+Together they form defense in depth:
+
+- **Prevent:** 3am refresh → visibilitychange refresh → submit-time banner.
+- **React:** `REF_CONFLICT` / `SECTION_FULL` / `RESUBMIT_NOT_FOUND` errors → force the `00` overflow path → inform manager.
+
+No single mechanism has to be bulletproof. Any two can fail silently and the third still catches it.
+
+---
+
 ## Important: never use Private Browsing
 
 If Safari is in Private Browsing mode, localStorage is wiped when the tab closes. This means all backup data stored on the iPad would be lost. The home screen shortcut avoids this by always opening in a normal Safari session, but if someone ever opens the app URL manually in a private tab, backups will not persist.
@@ -456,5 +524,6 @@ Original design sketch preserved above for historical context — useful when de
 | 2026-04-19 | Matt | Backup sheet column layout expanded 15 → 18 columns. Added scan-for-typo INPUT columns (TotalSales, CashDue, FoodSales, HouseTip) between `Names` and the master-mirror block. `CashoutType` moved forward to column C. `Shared By` dropped (derivable from Names). Master-mirror paste range shifted from `C:J → A:H` to `H:O → A:H`. `HouseTip` is a forward-looking placeholder — column exists now, will auto-populate when the frontend adds a HouseTip input field. Requires manual header-row update on `[BackupLog]AllCashouts` + Apps Script redeploy. |
 | 2026-04-19 | Matt | Documentation pass for the new 18-column layout: (1) added "Backup Sheet Layout (v3)" section to `projects/cashapp-sb/CLAUDE.md` pointing here for depth; (2) added "Backup Sheet — Layout & Scan-for-Typo Reference" section in this doc (full column table, H:O→A:H paste procedure, scan workflow, HouseTip placeholder mechanics); (3) updated client-facing `CashApp-Troubleshooting.html` Layer 2 block to note blue-headers = inputs / green-headers = outputs, plus brief H:O→A:H copy-to-master mention. Planned header color convention on the physical sheet: blue fill for D-G, green fill for H-O. |
 | 2026-04-19 | Matt | **Stale-date bug fix.** Discovered a cashout submitted on 2026-04-19 landed on yesterday's (2026-04-18) daily tab via the 00 overflow. Root cause: iOS Safari treats home-screen web apps as long-lived tabs — locking the iPad overnight suspends the tab instead of closing it, so the INIT IIFE (which sets `#cashoutDate` to today's Vancouver date) never re-fires on wake. The date field silently carried yesterday into the next day's first cashout. Three-layer defense added: (1) `scheduleDailyDateRefresh()` fires at 3am Vancouver time to refresh the date (3am not midnight, so late-night bar-close cashouts keep the correct prior-day date); (2) `visibilitychange` listener catches the case where the iPad slept through 3am and the setTimeout paused — when the app returns to foreground past 3am with a prior-day date, it refreshes; (3) Submit-time soft guard: if `calcData.cashoutDate !== todayVancouver()` and not in resubmit mode, show a soft yellow "Date Not Current" banner with an "OK, I've Checked" button. User must dismiss the banner before re-tapping Submit (non-blocking, preserves legitimate old-date submissions). New helper `todayVancouver()` centralizes date computation; all inline `new Date().toLocaleDateString(...)` calls replaced. Added `staleDateAcknowledged` flag reset on date-field change AND resetForm. |
+| 2026-04-19 | Matt | Added "Design rationale: why the date field is locked during resubmit" section. Documents the upsert semantics of resubmit (scan a specific daily tab by date, overwrite matching REF# rows), the three failure modes unlocking the date would create (RESUBMIT_NOT_FOUND confusion, silent cross-tab duplicates, lost audit trail), the smart `isResubmit` derivation from `mainStatus` that keeps the lock from over-triggering, and the loud-failure-is-a-feature insight (all error paths funnel to 00 overflow + manager notification). Documents how the resubmit lock pairs with the stale-date guard as complementary prevent/react layers. |
 
 *Add entries here as you make edits. Keep a paper trail.*
