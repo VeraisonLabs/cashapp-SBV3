@@ -440,6 +440,10 @@
   .submit-btn:hover  { opacity: 0.88; }
   .submit-btn:active { transform: scale(0.98); }
   .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  /* Dimmed while REF# conflict banner is visible. Kept clickable so the
+     submitCashout guard can still fire its toast + scroll-to-banner feedback,
+     rather than the tap registering as dead. */
+  .submit-btn.conflict-dim { opacity: 0.4; cursor: not-allowed; }
   .submit-btn .btn-sub {
     display: block;
     font-size: 11px;
@@ -1693,11 +1697,18 @@ function showRefConflict(refNum, date) {
   banner.style.display = 'block';
   banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
   document.getElementById('refNum').classList.add('error');
+  // Dim the submit button so staff see it's not the next action —
+  // picking a banner option is. Submit is still clickable so the
+  // submitCashout guard can surface the toast if they tap anyway.
+  const sb = document.getElementById('submitBtn');
+  if (sb) sb.classList.add('conflict-dim');
 }
 
 function dismissRefConflict() {
   document.getElementById('refConflictBanner').style.display = 'none';
   document.getElementById('refNum').classList.remove('error');
+  const sb = document.getElementById('submitBtn');
+  if (sb) sb.classList.remove('conflict-dim');
 }
 
 // "Entered Wrong REF#" — close the banner, scroll up to the REF# input,
