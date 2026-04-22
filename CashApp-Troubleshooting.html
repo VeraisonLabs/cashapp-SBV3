@@ -497,8 +497,8 @@
         <div class="layer-body">
           <strong>iPad Local Storage</strong>
           <span>Cashouts stored directly on the iPad itself. Saves you when WiFi is down, Google is down, or Apps Script
-            is broken. Retains 7-days of data <strong>UNLESS: the browsers local storage is manually deleted, or a
-              private browser is used.</strong> </span><br>
+            is broken. Retains the most recent 100 cashouts (~7 days at typical volume) <strong>UNLESS: the
+              browser's local storage is manually deleted, or a private browser is used.</strong> </span><br>
           To View the Cashout Log, click the <code>Cashout Log</code> button on the iPad.
         </div>
       </div>
@@ -757,22 +757,28 @@
     <!-- REF# conflict -->
     <div class="card">
       <h3 id="err-ref-conflict" class="error-anchor">Error: "REF# X already exists on today's sheet"</h3>
-      <p>Staff tried to submit a cashout using a REF# that's already been used on today's sheet. A cashout with this
-        REF# was already submitted from another device.</p>
+      <p>Staff tried to submit a cashout using a REF# that's already on today's sheet. A REF# is considered unique
+        across the entire day's tab (AM and PM, Server and Bar and Sushi sections all checked together), since Sandbar
+        REF#s are generated once per day when a server first rings an item in. So this error fires whether the existing
+        REF# came from another iPad, the same iPad earlier in the day, or a resubmit from a prior shift.</p>
       <div class="callout callout-safe">
         <h4>What's safe:</h4> The new cashout is stored on the iPad. Nothing was written to the sheet.
       </div>
       <h3>What the staff sees</h3>
-      <p>The app shows two options:</p>
+      <p>A red banner appears just below the Due/Owed result with the heading <strong>"REF# Already Used"</strong> and
+        the italic instruction <em>"select option then submit again"</em>. The Submit Cashout button dims to signal that
+        picking a banner option is the next action. The banner presents two choices:</p>
       <div class="callout callout-info" style="margin-top:1rem;">
-        <h4>Option 1: "Typed wrong REF#"</h4>
-        If the staff made a typo, they tap this button to edit the REF# and try again.
+        <h4>Option 1: "Entered Wrong REF#"</h4>
+        If the staff made a typo, they tap this button. The banner dismisses, the screen scrolls to the REF# input,
+        and the field is focused so they can type a fresh number and resubmit.
       </div>
       <div class="callout callout-warn" style="margin-top:0.5rem;">
-        <h4>Option 2: "Change to 00 (overflow)"</h4>
-        If the REF# is correct but already taken, the staff taps this button. The app changes the REF# to
-        <code>00</code>, recalculates, and submits to the <a href="#overflow">overflow area</a> at the bottom of the sheet.
-        The staff should tell the manager: <strong>"REF# used, cashout saved to overflow."</strong>
+        <h4>Option 2: "REF# Correct"</h4>
+        If the REF# is genuinely correct but already in use, the staff taps this button. The app changes the REF# to
+        <code>00</code>, recalculates, and the screen returns to the REF# input showing the new <code>00</code> value.
+        Staff then presses Submit Cashout to save the row to the <a href="#overflow">overflow area</a> at the bottom of
+        the sheet. The staff should tell the manager: <strong>"REF# used, cashout saved to overflow."</strong>
       </div>
       <h3>Manager follow-up (after service)</h3>
       <ol class="steps">
@@ -980,6 +986,9 @@
         <li><span class="badge badge-synced">Synced</span> &mdash; successfully sent to the sheet</li>
         <li><span class="badge badge-pending">Pending</span> &mdash; not yet synced (usually a network or sync error)
         </li>
+        <li><span class="badge badge-error">Error</span> &mdash; Apps Script returned a failure (template missing,
+          unknown section, section full, etc.). See <a href="#errors">Error Messages</a> for the specific cause.
+        </li>
         <li><span class="badge badge-conflict">Conflict</span> &mdash; ref# collision detected, requires your review
         </li>
       </ul>
@@ -1041,7 +1050,7 @@
   ">Back to Cashout App</a>
 
   <footer style="padding-bottom: 70px;">
-    Sandbar Cashout App &mdash; Troubleshooting Guide &mdash; Last updated April 2026
+    Sandbar Cashout App &mdash; Troubleshooting Guide &mdash; Last updated April 22, 2026
   </footer>
 
 </body>
