@@ -8,7 +8,10 @@
 //   • Protected Template tab lives inside the master sheet (not a separate file)
 //   • LockService serializes all writes (fixes the v2 nextEmptyRow race condition)
 //   • REF# is written to EVERY row of a cashout (not just the first)
-//   • Fresh submit with existing REF# → rejected with conflict error
+//   • Fresh submit with existing REF# → rejected with conflict error (day-wide:
+//     a bare REF# is unique across all sections on a given day, so REF#1 in
+//     AM Server collides with REF#1 in PM Server. Suffixed REF#s like
+//     1-MainBar and 1-Sushi are treated as distinct strings.)
 //   • Resubmit flag (data.isResubmit === true) → overwrites existing rows in place
 //   • Overwritten rows get a " (Resubmitted)" tag in column A as a visual audit trail
 //   • Orphan rows from shrinking splits are left un-tagged, visually standing out
@@ -30,6 +33,12 @@ const TEMPLATE_TAB_NAME = '⚠️ TEMPLATE — DO NOT DELETE';
 const RESUBMIT_TAG      = ' (Resubmitted)';
 const LOCK_TIMEOUT_MS   = 5000;
 const OVERFLOW_START    = 97;
+
+// Covers every section's row range (AM rows 3-16, PM rows 21-43) so a fresh
+// submit can scan the entire day for REF# duplicates. Empty rows between
+// section ranges are skipped by findRowsForRefNum's blank-cell check.
+const DAY_WIDE_DATA_START = 3;
+const DAY_WIDE_DATA_END   = 43;
 
 function isOverflowRef(refNumRaw) {
   return /^0+$/.test(refNumRaw);
@@ -122,17 +131,26 @@ function doPost(e) {
         return successResponse(rows.length + ' row(s) recorded (overflow)', ss);
       }
 
-      // ── Find existing rows for this ref# in this section ─────────────────
-      const existingRows = findRowsForRefNum(tab, config.dataStart, config.dataEnd, refNum);
-
+      // ── REF# conflict detection ───────────────────────────────────────────
+      // Resubmit path: section-scoped scan. We need to overwrite rows IN
+      //   this section that belong to THIS refNum. Widening this scan
+      //   would cause cross-section rows to be accidentally overwritten.
+      // Fresh submit path: day-wide scan. A REF# is considered unique across
+      //   the WHOLE tab for a given day (per Sandbar's numbering rule:
+      //   REF#s are generated when a server first rings an item, so the
+      //   same bare "1" should never legitimately appear twice in a day).
+      //   Suffixed REF#s (1-Sushi, 1-MainBar, etc.) are different strings
+      //   and won't collide with bare "1" thanks to first-word matching.
       if (isResubmit) {
+        const existingRows = findRowsForRefNum(tab, config.dataStart, config.dataEnd, refNum);
         if (existingRows.length > 0) {
           writeRowsOverwrite(tab, config, rows, existingRows);
         } else {
           writeRowsFresh(tab, config, rows);
         }
       } else {
-        if (existingRows.length > 0) {
+        const dayWideRows = findRowsForRefNum(tab, DAY_WIDE_DATA_START, DAY_WIDE_DATA_END, refNum);
+        if (dayWideRows.length > 0) {
           throw new Error('REF_CONFLICT: ' + refNum);
         }
         writeRowsFresh(tab, config, rows);
