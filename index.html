@@ -654,16 +654,18 @@
     font-weight: 500;
   }
 
-  /* REF# conflict banner — persistent, dismissible, two-option decision. */
+  /* REF# conflict banner — persistent, dismissible, two-option decision.
+     Positioned below the due/owed banner (inside #results) so it sits in
+     the staff's line of sight after pressing Calculate. */
   .ref-conflict-banner {
     position: relative;
-    margin: 0 0 16px;
+    margin: 16px 0 16px;
     padding: 20px 24px 16px;
     background: rgba(248, 81, 73, 0.12);
     border: 2px solid var(--red);
     border-radius: 8px;
     box-shadow: 0 4px 14px rgba(248, 81, 73, 0.18);
-    scroll-margin-top: 80px;  /* clears the sticky header when scrollIntoView is called on mobile */
+    scroll-margin-top: 80px;
   }
   .ref-conflict-title {
     font-family: 'Syne', sans-serif;
@@ -672,7 +674,16 @@
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--red);
-    margin: 0 32px 14px 0;
+    margin: 0 0 6px;
+    text-align: center;
+  }
+  .ref-conflict-subtitle {
+    font-size: 11px;
+    font-style: italic;
+    color: var(--muted);
+    text-align: center;
+    margin: 0 0 14px;
+    line-height: 1.4;
   }
   .ref-conflict-close {
     position: absolute;
@@ -710,14 +721,36 @@
   }
   .ref-conflict-btn {
     border: none;
-    padding: 12px 18px;
+    padding: 14px 18px;
     border-radius: 6px;
     font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    font-weight: 500;
     cursor: pointer;
     width: 100%;
     transition: all 0.15s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    text-align: center;
+  }
+  .ref-conflict-btn-title {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+  .ref-conflict-btn-instr {
+    font-size: 11px;
+    font-weight: 400;
+    opacity: 0.9;
+    font-style: italic;
+  }
+  .ref-conflict-btn-overflow-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    font-style: normal;
+    padding: 0 3px;
+    letter-spacing: 0.05em;
   }
   .ref-conflict-btn-primary {
     background: var(--red);
@@ -1060,20 +1093,6 @@
 
 <div class="container">
 
-  <!-- REF# conflict banner — persistent until dismissed. Shown when calculate()
-       detects a duplicate cashoutId (date+REF#) in localStorage. -->
-  <div class="ref-conflict-banner" id="refConflictBanner" style="display:none;">
-    <button class="ref-conflict-close" onclick="dismissRefConflict()" aria-label="Close">×</button>
-    <div class="ref-conflict-title">REF# Already Used</div>
-
-    <button class="ref-conflict-btn ref-conflict-btn-primary" onclick="editRefConflict()">Typed wrong REF#</button>
-
-    <div class="ref-conflict-divider">or</div>
-
-    <button class="ref-conflict-btn ref-conflict-btn-secondary" onclick="useOverflowRef()">Change to 00 (overflow)</button>
-    <div class="ref-conflict-option-note">Inform manager: "REF# used, cashout saved to overflow"</div>
-  </div>
-
   <!-- CASHOUT INFO -->
   <div class="section-label">Cashout Info</div>
   <div class="card">
@@ -1330,6 +1349,30 @@
 
     <!-- Split / sushi per-person results -->
     <div id="splitResults"></div>
+
+    <!-- REF# conflict banner — lives below the due/owed banner so the error
+         appears right where staff are already looking after Calculate. Shown
+         by showRefConflict() when calculate() detects a duplicate cashoutId
+         (date+REF#) in localStorage. Persistent until the user picks an
+         option or dismisses it. -->
+    <div class="ref-conflict-banner" id="refConflictBanner" style="display:none;">
+      <button class="ref-conflict-close" onclick="dismissRefConflict()" aria-label="Close">×</button>
+      <div class="ref-conflict-title">REF# Already Used</div>
+      <div class="ref-conflict-subtitle">select option then submit again</div>
+
+      <button class="ref-conflict-btn ref-conflict-btn-primary" onclick="editRefConflict()">
+        <span class="ref-conflict-btn-title">Entered Wrong REF#</span>
+        <span class="ref-conflict-btn-instr">change REF# and resubmit</span>
+      </button>
+
+      <div class="ref-conflict-divider">or</div>
+
+      <button class="ref-conflict-btn ref-conflict-btn-secondary" onclick="useOverflowRef()">
+        <span class="ref-conflict-btn-title">REF# Correct</span>
+        <span class="ref-conflict-btn-instr">use REF# <span class="ref-conflict-btn-overflow-num">00</span> and resubmit</span>
+      </button>
+      <div class="ref-conflict-option-note">Inform manager: "REF# used, cashout saved to overflow"</div>
+    </div>
 
     <!-- Persistent success banner (shown on submit success, cleared by Reset) -->
     <div class="success-banner" id="successBanner" style="display:none;">
@@ -1643,10 +1686,12 @@ function getNames() {
 // REF# conflict banner — persistent (doesn't auto-dismiss). Shown when a
 // fresh submit attempts a date+REF# that's already in the backup log.
 // Two escape paths: (1) edit the REF# to something fresh, (2) use 00 overflow.
+// Uses block:'center' so the due/owed banner above stays visible — staff
+// see their calc AND the error in the same frame.
 function showRefConflict(refNum, date) {
   const banner = document.getElementById('refConflictBanner');
   banner.style.display = 'block';
-  banner.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
   document.getElementById('refNum').classList.add('error');
 }
 
@@ -1655,21 +1700,25 @@ function dismissRefConflict() {
   document.getElementById('refNum').classList.remove('error');
 }
 
-// "Typed wrong REF#" — close the banner and jump to the REF# field so the
-// staff can fix it without scrolling.
+// "Entered Wrong REF#" — close the banner, scroll up to the REF# input,
+// focus + select it so staff can type a fresh number immediately.
 function editRefConflict() {
   dismissRefConflict();
   const refEl = document.getElementById('refNum');
+  refEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
   refEl.focus();
   refEl.select?.();
 }
 
-// "Change to 00 (overflow)" — set REF# to 00 and re-run calculate.
-// Overflow refs are exempt from conflict detection and append to row 97+.
+// "REF# Correct" — set REF# to 00, re-run calculate (overflow refs are
+// exempt from conflict detection and append to row 97+), then scroll to
+// the REF# input so staff can see the new value before pressing submit.
 function useOverflowRef() {
-  document.getElementById('refNum').value = '00';
+  const refEl = document.getElementById('refNum');
+  refEl.value = '00';
   dismissRefConflict();
   calculate();
+  refEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 function showToast(msg, type = 'success') {
@@ -1879,12 +1928,17 @@ function calculate() {
   // with its backup record. For managers who legitimately need to
   // overwrite an existing cashout, the path is "Edit to Resubmit" from
   // the Cashout Log, not a fresh submit with the same REF#.
+  //
+  // Detection is flagged here but the banner is shown at the END of
+  // calculate() so results render first — the conflict banner then
+  // appears below the due/owed banner in the staff's line of sight.
+  // Submission is blocked via a guard in submitCashout().
+  let _refConflict = null;
   if (!isResubmitMode && !/^0+$/.test(refNum)) {
     const cashoutId = cashoutDate + '[REF' + refNum + ']';
     const existing = getBackups().find(b => b.cashoutId === cashoutId);
     if (existing) {
-      showRefConflict(refNum, cashoutDate);
-      return;
+      _refConflict = { refNum, cashoutDate };
     }
   }
 
@@ -2011,6 +2065,7 @@ function calculate() {
     resetSubmitButton();
     document.getElementById('results').style.display = 'block';
     document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (_refConflict) showRefConflict(_refConflict.refNum, _refConflict.cashoutDate);
     return;
   }
 
@@ -2140,10 +2195,21 @@ function calculate() {
   };
   document.getElementById('results').style.display = 'block';
   document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  if (_refConflict) showRefConflict(_refConflict.refNum, _refConflict.cashoutDate);
 }
 
 // ── SUBMIT ────────────────────────────────────────────────────────────────────
 async function submitCashout(isResubmit) {
+  // REF# conflict guard: calculate() renders results even when a duplicate
+  // REF# is detected (so the banner appears below the due/owed banner), but
+  // the calcData for that case is for a colliding REF#. Block submission
+  // until staff picks an option on the banner.
+  const conflictBanner = document.getElementById('refConflictBanner');
+  if (conflictBanner && conflictBanner.style.display === 'block') {
+    showToast('Pick an option on the REF# banner first', 'error');
+    conflictBanner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
   if (!calcData) { showToast('Calculate first', 'error'); return; }
   if (isResubmit) {
     const ok = confirm('This will replace the previous cashout for this Reference #.\n\nContinue?');
