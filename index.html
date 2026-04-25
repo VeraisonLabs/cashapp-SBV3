@@ -1773,6 +1773,11 @@ function syncSectionGrid() {
   }
   const shift = val.startsWith('AM') ? 'AM' : 'PM';
   selectShift(shift);
+  // selectShift wipes the hidden <select id="section"> as part of its
+  // user-flow reset (tapping a shift starts a fresh type pick). Restore
+  // the value here so loadFromBackup / any other programmatic caller
+  // ends with the section value and the button highlight in agreement.
+  document.getElementById('section').value = val;
   document.querySelectorAll('.section-btn').forEach(b => {
     const role = b.dataset.role;
     const fullVal = (role === 'Sushi') ? 'PM Sushi' : shift + ' ' + role;
