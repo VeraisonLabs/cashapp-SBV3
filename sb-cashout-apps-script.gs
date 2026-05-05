@@ -85,8 +85,12 @@ function getRefSuffix(section) {
 
 // ── Entry point ───────────────────────────────────────────────────────────────
 function doPost(e) {
+  var _payloadEcho = '(unparsed)';  // captured early so the catch block can log it
   try {
     const data = JSON.parse(e.postData.contents);
+    _payloadEcho = JSON.stringify(data);
+    Logger.log('── doPost ENTRY ── payload=' + _payloadEcho);
+
     const rows = data.rows;
     const isResubmit = data.isResubmit === true;
 
@@ -98,6 +102,14 @@ function doPost(e) {
     const suffix      = getRefSuffix(section);
     const refNum      = refNumRaw + suffix;
     const config      = SECTION_MAP[section];
+
+    Logger.log('doPost extracted: cashoutDate=' + cashoutDate
+      + ', section="' + section + '"'
+      + ', refNumRaw="' + refNumRaw + '"'
+      + ', suffix="' + suffix + '"'
+      + ', resolved refNum="' + refNum + '"'
+      + ', isResubmit=' + isResubmit
+      + ', rowCount=' + rows.length);
 
     if (!config) throw new Error('UNKNOWN_SECTION: ' + section);
 
@@ -127,6 +139,7 @@ function doPost(e) {
 
       // ── Overflow: all-zeros REF# routes to bottom of sheet ──────────────
       if (isOverflowRef(refNumRaw)) {
+        Logger.log('OVERFLOW path: writing ' + rows.length + ' row(s) to overflow area (row ' + OVERFLOW_START + '+)');
         writeOverflowRows(tab, rows, section);
         return successResponse(rows.length + ' row(s) recorded (overflow)', ss);
       }
@@ -143,25 +156,35 @@ function doPost(e) {
       //   and won't collide with bare "1" thanks to first-word matching.
       if (isResubmit) {
         const existingRows = findRowsForRefNum(tab, config.dataStart, config.dataEnd, refNum);
+        Logger.log('RESUBMIT path: section-scoped scan rows ' + config.dataStart + '-' + config.dataEnd
+          + ' for refNum "' + refNum + '" → existingRows=[' + existingRows.join(',') + '] (' + existingRows.length + ' found)');
         if (existingRows.length > 0) {
+          Logger.log('RESUBMIT sub-branch: OVERWRITE (existing rows found, will tag (Resubmitted))');
           writeRowsOverwrite(tab, config, rows, existingRows);
         } else {
+          Logger.log('RESUBMIT sub-branch: FALLTHROUGH-FRESH (no existing rows; WiFi-recovery path, writing as fresh without tag)');
           writeRowsFresh(tab, config, rows);
         }
       } else {
         const dayWideRows = findRowsForRefNum(tab, DAY_WIDE_DATA_START, DAY_WIDE_DATA_END, refNum);
+        Logger.log('FRESH path: day-wide scan rows ' + DAY_WIDE_DATA_START + '-' + DAY_WIDE_DATA_END
+          + ' for refNum "' + refNum + '" → dayWideRows=[' + dayWideRows.join(',') + '] (' + dayWideRows.length + ' found)');
         if (dayWideRows.length > 0) {
+          Logger.log('FRESH outcome: REF_CONFLICT — refNum already present day-wide, rejecting submit');
           throw new Error('REF_CONFLICT: ' + refNum);
         }
+        Logger.log('FRESH outcome: writing ' + rows.length + ' row(s) into section "' + section + '"');
         writeRowsFresh(tab, config, rows);
       }
 
+      Logger.log('doPost SUCCESS: ' + rows.length + ' row(s) recorded');
       return successResponse(rows.length + ' row(s) recorded', ss);
     } finally {
       lock.releaseLock();
     }
 
   } catch (err) {
+    Logger.log('doPost ERROR: ' + err.toString() + ' | payload was: ' + _payloadEcho);
     return errorResponse(err);
   }
 }
